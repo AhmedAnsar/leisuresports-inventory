@@ -1,17 +1,22 @@
 {
-  "name": "tennisrack",
+  "name": "leisuresports-inventory",
   "version": "1.0.0",
-  "description": "Tennis Racquet Inventory Manager - Track pre-owned racquets with photo capture, PDF receipts, and WhatsApp integration",
+  "description": "Leisure Sports Tennis Pro Shop - Racquet Inventory Manager",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": ["tennis", "inventory", "racquet"],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "license": "MIT",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "express": "^4.21.0",
+    "express-session": "^1.19.0",
     "multer": "^1.4.5-lts.1",
     "pdfkit": "^0.15.0",
+    "pg": "^8.13.0",
     "qrcode": "^1.5.4",
     "sql.js": "^1.11.0"
   }

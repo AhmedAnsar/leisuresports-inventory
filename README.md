@@ -1,106 +1,148 @@
 # 🎾 Leisure Sports - Racquet Inventory Manager
 
-A standalone inventory app for **Leisure Sports** Tennis Pro Shop (est. 1978), 400 Orchard Road #04-22 Singapore.  
+Inventory app for **Leisure Sports** Tennis Pro Shop (est. 1978), 400 Orchard Road #04-22 Singapore.
 Manage pre-owned tennis racquets — intake, track, look up, and sell.
 
 ## Features
 
-- **Intake Form** — Record customer details, racquet specs (brand, model, strings, condition), take photos, set price
-- **Auto Inventory Code** — Each racquet gets a unique code (e.g. `TRS-K4F2-X9B`) to stick on the racquet
-- **PDF Receipts** — Generate professional PDF with all racquet details, QR code, and photo. Print or email to customer
-- **WhatsApp Integration** — One-click sends racquet details to customer via WhatsApp
-- **Lookup** — Buyer reads code off racquet → you type it in → see everything instantly
-- **Inventory Dashboard** — Browse all stock, filter by status, search by brand/model/customer
-- **Mark as Sold** — Track what's available vs sold
-- **Local Database** — SQLite database stored locally, no cloud needed
+- **Intake Form** — Customer details, racquet specs, photo capture, pricing
+- **Auto Inventory Code** — Unique code (e.g. `LS-K4F2-X9B`) to stick on racquet
+- **PDF Receipts** — Professional PDF with QR code, all details, and photo
+- **WhatsApp** — One-click message to customer with racquet details
+- **Lookup** — Type inventory code → see everything instantly
+- **Dashboard** — Browse stock, filter, search, mark as sold
+- **Dual Mode** — Runs locally with SQLite OR in the cloud with PostgreSQL
 
-## Quick Start
+---
+
+## Option 1: Run Locally
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (version 16 or newer)
+- [Node.js](https://nodejs.org/) v18+
 
-### Setup
+### Steps
+```bash
+cd tennisrack
+npm install
+npm start
+```
+Open **http://localhost:3000** — done!
 
-1. **Download/copy** this entire `tennisrack` folder to your computer
+Access from your phone (same WiFi): `http://YOUR_COMPUTER_IP:3000`
 
-2. **Open terminal** (Command Prompt on Windows, Terminal on Mac) and navigate to the folder:
-   ```bash
-   cd path/to/tennisrack
-   ```
+---
 
-3. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+## Option 2: Deploy to Railway (Cloud)
 
-4. **Start the app:**
-   ```bash
-   npm start
-   ```
+This makes the app accessible from anywhere — phone, iPad, any browser.
 
-5. **Open browser** and go to:
-   ```
-   http://localhost:3000
-   ```
+### Step 1: Push to GitHub
 
-That's it! The app is running.
+Create a GitHub repo and push the code:
 
-### Using on your phone
+```bash
+cd tennisrack
+git init
+git add .
+git commit -m "Leisure Sports Inventory App"
+```
 
-Since the app runs on your local computer, you can access it from your phone too (great for taking racquet photos):
+Go to [github.com/new](https://github.com/new), create a new repo (e.g. `leisuresports-inventory`), then:
 
-1. Find your computer's local IP address:
-   - **Windows:** Open Command Prompt → type `ipconfig` → look for "IPv4 Address" (e.g. `192.168.1.100`)
-   - **Mac:** System Preferences → Network → look for IP address
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/leisuresports-inventory.git
+git branch -M main
+git push -u origin main
+```
 
-2. On your phone browser, go to: `http://YOUR_IP:3000`
-   (e.g. `http://192.168.1.100:3000`)
+### Step 2: Create Railway Project
 
-Both devices must be on the same WiFi network.
+1. Go to [railway.app](https://railway.app) and sign in with GitHub
+2. Click **"New Project"**
+3. Choose **"Deploy from GitHub repo"**
+4. Select your `leisuresports-inventory` repo
+5. Railway will auto-detect Node.js and start building
+
+### Step 3: Add PostgreSQL Database
+
+1. In your Railway project, click **"+ New"**
+2. Select **"Database" → "Add PostgreSQL"**
+3. Wait for it to provision (takes ~30 seconds)
+
+### Step 4: Connect Database to App
+
+1. Click on your app service (not the database)
+2. Go to **"Variables"** tab
+3. Click **"New Variable"**
+4. Name: `DATABASE_URL`
+5. Value: Click the **"Add Reference"** → select `DATABASE_URL` from the PostgreSQL service
+6. Railway will auto-fill it with something like `${{Postgres.DATABASE_URL}}`
+
+### Step 5: Add a Volume (for photo storage)
+
+1. Click on your app service
+2. Go to **"Volumes"** section (under Settings)
+3. Click **"+ Add Volume"**
+4. Mount path: `/data`
+5. This gives persistent storage for uploaded photos
+
+### Step 6: Add Volume Environment Variable
+
+1. Go to **"Variables"** tab of your app service
+2. Add: `RAILWAY_VOLUME_MOUNT_PATH` = `/data`
+
+### Step 7: Generate Public URL
+
+1. Go to **"Settings"** tab of your app service
+2. Under **"Networking"**, click **"Generate Domain"**
+3. You'll get a URL like `leisuresports-inventory-production.up.railway.app`
+
+### Step 8: Open the App!
+
+Visit your Railway URL from any device — phone, iPad, desktop.
+Bookmark it on your phone home screen for quick access.
+
+---
 
 ## File Structure
 
 ```
 tennisrack/
-├── server.js          # Backend server (Express + SQLite + PDF generation)
+├── server.js          # Backend (Express + SQLite/PostgreSQL + PDF)
 ├── package.json       # Dependencies
+├── railway.json       # Railway deployment config
+├── .gitignore         # Git ignore rules
 ├── public/
 │   └── index.html     # Frontend (single-page app)
-├── uploads/           # Racquet photos (auto-created)
-├── pdf/               # Generated PDFs (auto-created)
-└── tennisrack.db      # SQLite database (auto-created on first run)
+├── uploads/           # Racquet photos (local mode)
+├── pdf/               # Generated PDFs (local mode)
+└── tennisrack.db      # SQLite database (local mode only)
 ```
 
 ## How It Works
 
-### For Sellers (customer walks in to sell a racquet):
-1. Go to **＋ Intake** tab
-2. Fill in customer name, phone
-3. Select racquet brand → models auto-populate
-4. Add string details, condition, price
-5. Take a photo with your phone camera
-6. Submit → get inventory code
-7. **Print PDF** receipt or **WhatsApp** it to customer
-8. Write/stick the inventory code on the racquet
+### Seller walks in:
+1. **＋ Intake** → fill customer + racquet details → snap photo → submit
+2. Get inventory code → print PDF or WhatsApp to customer
+3. Stick code on racquet
 
-### For Buyers (customer wants to buy a racquet):
-1. Customer reads the inventory code on the racquet
-2. Go to **🔍 Lookup** tab
-3. Type the code → see all details, photo, price
-4. When sold, click **Mark as Sold**
+### Buyer walks in:
+1. Customer reads code off racquet
+2. **🔍 Lookup** → type code → see details + photo + price
+3. **Mark as Sold** when purchased
 
-## Data Backup
+## Backup
 
-Your database is stored in `tennisrack.db`. To back up:
-- Simply copy the `tennisrack.db` file somewhere safe
-- Also back up the `uploads/` folder (racquet photos)
+**Local:** Copy `tennisrack.db` + `uploads/` folder
+**Railway:** Database is managed by Railway (auto-backed up). Use Railway's backup feature for extra safety.
 
 ## Troubleshooting
 
-- **Port already in use?** Run with a different port: `PORT=3001 npm start`
-- **Can't access from phone?** Make sure both devices are on same WiFi and firewall allows port 3000
-- **Photos not saving?** Make sure the `uploads/` folder exists and is writable
+- **Port in use locally?** `PORT=3001 npm start`
+- **Railway build fails?** Check build logs in Railway dashboard
+- **Photos missing after deploy?** Make sure you added the Volume (Step 5)
+- **Database not connecting?** Verify `DATABASE_URL` variable references PostgreSQL correctly
 
 ## License
 
-MIT — Free to use and modify.
+MIT
