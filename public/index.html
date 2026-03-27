@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Leisure Sports - Racquet Inventory</title>
+<link rel="icon" href="https://www.leisuresports.sg/image/cache/Final-Logo copy-800x340.jpg" type="image/jpeg">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1612; --surface: #241f1a; --surface2: #2e2822;
+    --accent: #c8a96e; --accent2: #dfc08a; --accent-dark: #9c7f4a;
+    --text: #f5f0e8; --text2: #a89e90; --border: #3a3228;
+    --input-bg: #1a1612; --success: #5a9e6f; --danger: #c45a5a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  a { color: var(--accent); }
+  .header {
+    background: linear-gradient(135deg, #241f1a 0%, #1a1612 100%);
+    padding: 14px 20px; border-bottom: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 100;
+  }
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+  .logo-img { height: 44px; border-radius: 4px; object-fit: contain; }
+  .logo-text { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+  .logo-sub { font-size: 9px; color: var(--text2); letter-spacing: 2px; text-transform: uppercase; margin-top: 1px; }
+  .nav { display: flex; gap: 6px; }
+  .nav-btn {
+    padding: 9px 16px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 600; font-family: inherit; transition: all 0.2s;
+    background: var(--surface2); color: var(--text2);
+  }
+  .nav-btn.active { background: var(--accent); color: #1a1612; }
+  .nav-btn:hover { opacity: 0.85; }
+  .container { max-width: 720px; margin: 0 auto; padding: 20px 16px 60px; }
+  .card { background: var(--surface); border-radius: 12px; padding: 22px; margin-bottom: 18px; border: 1px solid var(--border); }
+  .section-title {
+    font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 2px; color: var(--accent);
+    margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); margin-bottom: 5px; }
+  .field label .req { color: var(--accent); }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: var(--input-bg); color: var(--text); transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); outline: none; }
+  .field select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a89e90' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .row { display: grid; gap: 12px; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 500px) { .row-2, .row-3 { grid-template-columns: 1fr; } }
+  .btn {
+    padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-weight: 600; font-family: inherit; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: linear-gradient(135deg, #c8a96e, #dfc08a); color: #1a1612; box-shadow: 0 4px 15px rgba(200,169,110,0.25); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,169,110,0.35); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-whatsapp { background: #25D366; color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-block { width: 100%; justify-content: center; }
+  .btn-sm { padding: 8px 16px; font-size: 13px; }
+  .photo-upload { width: 100%; padding: 28px 16px; border: 2px dashed var(--border); border-radius: 10px; background: var(--bg); color: var(--text2); cursor: pointer; text-align: center; transition: border-color 0.2s; }
+  .photo-upload:hover { border-color: var(--accent); }
+  .photo-preview { position: relative; display: inline-block; }
+  .photo-preview img { max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid var(--border); }
+  .photo-remove { position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; border-radius: 50%; background: var(--danger); color: #fff; border: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .success-card { text-align: center; border: 2px solid var(--success); }
+  .success-icon { font-size: 48px; margin-bottom: 10px; }
+  .inv-code-display { display: inline-block; background: var(--bg); padding: 14px 32px; border-radius: 8px; font-size: 24px; font-weight: 700; letter-spacing: 3px; font-family: monospace; border: 2px dashed var(--accent); margin: 16px 0; color: var(--accent); }
+  .btn-group { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .inv-item { display: flex; align-items: center; gap: 14px; padding: 14px; cursor: pointer; transition: background 0.15s; border-radius: 8px; }
+  .inv-item:hover { background: var(--surface2); }
+  .inv-thumb { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; background: var(--bg); flex-shrink: 0; }
+  .inv-thumb-placeholder { width: 52px; height: 52px; border-radius: 8px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .inv-info { flex: 1; min-width: 0; }
+  .inv-title { font-weight: 700; font-size: 15px; }
+  .inv-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .inv-price { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .badge-available { background: rgba(90,158,111,0.15); color: var(--success); }
+  .badge-sold { background: rgba(196,90,90,0.15); color: var(--danger); }
+  .detail-photo { width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px; background: var(--bg); margin-bottom: 16px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
+  .detail-cell { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+  .detail-value { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  .price-box { margin-top: 16px; padding: 16px; background: var(--bg); border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+  .price-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+  .price-value { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat-card { background: var(--surface); border-radius: 10px; padding: 14px; text-align: center; border: 1px solid var(--border); }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; }
+  .stat-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  @media (max-width: 500px) { .stats-bar { grid-template-columns: 1fr 1fr; } }
+  .lookup-input { flex: 1; padding: 12px 14px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; font-weight: 600; letter-spacing: 1px; font-family: monospace; background: var(--input-bg); color: var(--text); text-transform: uppercase; }
+  .lookup-input:focus { border-color: var(--accent); outline: none; }
+  .hidden { display: none !important; }
+  .error-msg { color: var(--danger); font-size: 14px; margin-top: 10px; }
+  .note-box { margin-top: 12px; padding: 10px 14px; background: var(--bg); border-radius: 8px; font-size: 14px; color: var(--text2); }
+  .shop-info { text-align: center; padding: 6px; font-size: 11px; color: var(--text2); background: var(--surface); letter-spacing: 0.5px; }
+  .shop-info a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="shop-info">400 Orchard Road #04-22 Singapore 238875 · <a href="tel:+6567370656">+65 6737 0656</a> · <a href="https://www.leisuresports.sg" target="_blank">www.leisuresports.sg</a></div>
+
+<div class="header">
+  <div class="logo-area">
+    <img src="https://www.leisuresports.sg/image/cache/Final-Logo copy-800x340.jpg" alt="Leisure Sports" class="logo-img" onerror="this.style.display='none';document.getElementById('fallback-logo').style.display='flex'">
+    <div id="fallback-logo" style="display:none;width:44px;height:44px;border-radius:8px;background:var(--accent);align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎾</div>
+    <div>
+      <div class="logo-text">LEISURE SPORTS</div>
+      <div class="logo-sub">Tennis Pro Shop · Est. 1978 · Inventory System</div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showView('intake')" id="nav-intake">＋ Intake</button>
+    <button class="nav-btn" onclick="showView('lookup')" id="nav-lookup">🔍 Lookup</button>
+    <button class="nav-btn" onclick="showView('inventory')" id="nav-inventory">📦 Stock <span id="stock-count"></span></button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- INTAKE -->
+  <div id="view-intake">
+    <form id="intake-form" enctype="multipart/form-data">
+      <div class="card">
+        <div class="section-title">👤 Customer Details</div>
+        <div class="field"><label>Full Name <span class="req">*</span></label><input type="text" name="customer_name" required placeholder="Customer name"></div>
+        <div class="row row-2">
+          <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" name="customer_phone" required placeholder="+65 9123 4567"></div>
+          <div class="field"><label>Email</label><input type="email" name="customer_email" placeholder="email@example.com"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title">🏸 Racquet Details</div>
+        <div class="row row-2">
+          <div class="field"><label>Brand <span class="req">*</span></label><select name="brand" id="brand-select" required><option value="">Select brand...</option></select></div>
+          <div class="field"><label>Model <span class="req">*</span></label><select name="model" id="model-select" required><option value="">Pick brand first</option></select></div>
+        </div>
+        <div class="row row-3">
+          <div class="field"><label>Head Size</label><input type="text" name="head_size" placeholder="100 sq in"></div>
+          <div class="field"><label>Weight</label><input type="text" name="weight" placeholder="300g"></div>
+          <div class="field"><label>Grip Size</label><select name="grip_size"><option value="">Select...</option><option>0 (4")</option><option>1 (4⅛")</option><option>2 (4¼")</option><option>3 (4⅜")</option><option>4 (4½")</option><option>5 (4⅝")</option></select></div>
+        </div>
+        <div class="field"><label>Condition <span class="req">*</span></label><select name="condition" required><option value="">Rate condition...</option><option>Excellent</option><option>Good</option><option>Fair</option><option>Poor</option></select></div>
+      </div>
+      <div class="card">
+        <div class="section-title">🧵 String Details</div>
+        <div class="row row-2">
+          <div class="field"><label>String Brand</label><select name="string_brand"><option value="">Select...</option><option>Luxilon</option><option>Babolat</option><option>Wilson</option><option>Head</option><option>Tecnifibre</option><option>Solinco</option><option>Yonex</option><option>Volkl</option><option>Gamma</option><option>Kirschbaum</option><option>Tourna</option><option>Prince</option><option>Dunlop</option><option>Other</option></select></div>
+          <div class="field"><label>String Model</label><input type="text" name="string_model" placeholder="e.g. ALU Power"></div>
+        </div>
+        <div class="row row-2">
+          <div class="field"><label>String Type</label><select name="string_type"><option value="">Select...</option><option>Polyester</option><option>Multifilament</option><option>Synthetic Gut</option><option>Natural Gut</option><option>Hybrid</option></select></div>
+          <div class="field"><label>Tension</label><input type="text" name="string_tension" placeholder="55 lbs"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title">💰 Pricing & Photo</div>
+        <div class="field"><label>Expected Selling Price (S$) <span class="req">*</span></label><input type="number" name="expected_price" required placeholder="150.00" step="0.01" min="0"></div>
+        <div class="field"><label>Notes / Additional Info</label><textarea name="notes" placeholder="Scratches, cosmetic details, reason for selling..."></textarea></div>
+        <div class="field">
+          <label>📷 Racquet Photo</label>
+          <input type="file" name="photo" id="photo-input" accept="image/*" capture="environment" style="display:none">
+          <div id="photo-area"><div class="photo-upload" onclick="document.getElementById('photo-input').click()"><div style="font-size:28px;margin-bottom:6px">📷</div>Tap to take photo or upload image</div></div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" style="font-size:16px;padding:16px">✓ Add to Inventory</button>
+    </form>
+    <div id="success-view" class="card success-card hidden">
+      <div class="success-icon">✓</div>
+      <div style="font-size:20px;font-weight:700;font-family:'Playfair Display',serif">Racquet Added!</div>
+      <div style="color:var(--text2);margin-bottom:8px">Inventory code assigned</div>
+      <div class="inv-code-display" id="success-code"></div>
+      <div style="font-size:13px;color:var(--text2)">Stick this code on the racquet label</div>
+      <div class="btn-group">
+        <button class="btn btn-primary btn-sm" onclick="downloadPDF()">📄 Download PDF</button>
+        <button class="btn btn-whatsapp btn-sm" onclick="sendWhatsApp()">💬 WhatsApp</button>
+        <button class="btn btn-secondary btn-sm" onclick="addAnother()">＋ Add Another</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOOKUP -->
+  <div id="view-lookup" class="hidden">
+    <div class="card">
+      <div class="section-title">🔍 Lookup Racquet by Inventory Code</div>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:14px">Enter the code from the racquet sticker to see full details.</p>
+      <div style="display:flex;gap:10px">
+        <input class="lookup-input" id="lookup-code" placeholder="e.g. LS-K4F2-X9B" onkeydown="if(event.key==='Enter')doLookup()">
+        <button class="btn btn-primary" onclick="doLookup()">Search</button>
+      </div>
+      <div id="lookup-error" class="error-msg hidden"></div>
+    </div>
+    <div id="lookup-result" class="hidden"></div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div id="view-inventory" class="hidden">
+    <div id="stats-bar" class="stats-bar"></div>
+    <div class="card" style="padding-bottom:14px">
+      <div class="section-title">📦 All Racquets</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input type="text" id="inv-search" placeholder="Filter by code, brand, model, customer..." style="flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text)" oninput="loadInventory()">
+        <select id="inv-status-filter" style="padding:10px;border:2px solid var(--border);border-radius:8px;font-size:13px;background:var(--input-bg);color:var(--text);appearance:none;padding-right:28px;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%23a89e90%27 d=%27M6 8L1 3h10z%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center" onchange="loadInventory()"><option value="">All</option><option value="Available">Available</option><option value="Sold">Sold</option></select>
+      </div>
+    </div>
+    <div id="inv-list"></div>
+  </div>
+</div>
+
+<script>
+const BRANDS = {
+  Babolat: ["Pure Drive 2025","Pure Drive 98 2025","Pure Drive 107","Pure Aero","Pure Aero 98","Pure Aero Rafa","Pure Strike 98 16x19","Pure Strike 98 18x20","Pure Strike 100 16x20","Evo Drive","Evo Aero","Boost Drive","Boost Aero"],
+  Wilson: ["Blade 98 V9","Blade 98 18x20 V9","Blade 100 V9","Blade 104 V9","Pro Staff 97 V14","Shift 99","Shift 99 Pro","RF01","Clash 100","Ultra 100 V4","Burn 100"],
+  Head: ["Speed Pro 2025","Speed MP 2025","Speed Legend MP 2025","Speed MP 2026","Gravity Pro","Gravity MP","Radical Pro","Radical MP","Extreme Pro","Extreme MP","Prestige Pro","Prestige MP","Boom Pro","Boom MP"],
+  Yonex: ["EZONE 98","EZONE 100","VCORE 98","VCORE 100","VCORE Pro 97","Percept 97","Percept 100"],
+  Dunlop: ["CX 200","CX 400","SX 300","SX 600","FX 500"],
+  Prince: ["Phantom 100","Phantom 100X","ATS Textreme 100","Beast 100","Ripstick 100"],
+  Solinco: ["Blackout 100","Blackout 285","Blackout 300"],
+  Tecnifibre: ["TF40","T-Fight 305","T-Fight 300","Tempo 298","TF-X1"],
+  Volkl: ["V-Cell 10","V-Feel 8","C10 Pro"],
+  Other: ["Custom / Unlisted"]
+};
+let lastAddedRacquet = null;
+
+const brandSel = document.getElementById("brand-select");
+const modelSel = document.getElementById("model-select");
+Object.keys(BRANDS).forEach(b => { const o = document.createElement("option"); o.value = b; o.textContent = b; brandSel.appendChild(o); });
+brandSel.addEventListener("change", () => {
+  modelSel.innerHTML = '<option value="">Select model...</option>';
+  (BRANDS[brandSel.value]||[]).forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; modelSel.appendChild(o); });
+});
+
+document.getElementById("photo-input").addEventListener("change", function() {
+  const file = this.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { document.getElementById("photo-area").innerHTML = '<div class="photo-preview"><img src="'+e.target.result+'" alt="Racquet"><button type="button" class="photo-remove" onclick="removePhoto()">×</button></div>'; };
+  reader.readAsDataURL(file);
+});
+function removePhoto() { document.getElementById("photo-input").value = ""; document.getElementById("photo-area").innerHTML = '<div class="photo-upload" onclick="document.getElementById(\'photo-input\').click()"><div style="font-size:28px;margin-bottom:6px">📷</div>Tap to take photo or upload image</div>'; }
+
+function showView(v) {
+  ["intake","lookup","inventory"].forEach(id => { document.getElementById("view-"+id).classList.toggle("hidden",id!==v); document.getElementById("nav-"+id).classList.toggle("active",id===v); });
+  if (v==="inventory") { loadInventory(); loadStats(); }
+}
+
+document.getElementById("intake-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    const res = await fetch("/api/racquets", { method: "POST", body: new FormData(e.target) });
+    const data = await res.json();
+    if (data.success) {
+      lastAddedRacquet = data.racquet;
+      document.getElementById("success-code").textContent = data.racquet.inventory_code;
+      document.getElementById("intake-form").classList.add("hidden");
+      document.getElementById("success-view").classList.remove("hidden");
+      e.target.reset(); removePhoto(); loadStats();
+    } else { alert("Error: "+(data.error||"Failed to save")); }
+  } catch (err) { alert("Error: "+err.message); }
+});
+function addAnother() { document.getElementById("intake-form").classList.remove("hidden"); document.getElementById("success-view").classList.add("hidden"); lastAddedRacquet = null; }
+
+function downloadPDF() { if (lastAddedRacquet) window.open("/api/racquets/"+lastAddedRacquet.inventory_code+"/pdf","_blank"); }
+function downloadPDFForCode(code) { window.open("/api/racquets/"+code+"/pdf","_blank"); }
+
+function sendWhatsApp() { if (lastAddedRacquet) sendWhatsAppFor(lastAddedRacquet); }
+function sendWhatsAppFor(r) {
+  const msg = "Hi "+r.customer_name+",\n\nThank you for visiting Leisure Sports!\n\nYour racquet has been received for consignment:\n\n🏸 "+r.brand+" "+r.model+"\n🏷️ Inventory Code: "+r.inventory_code+"\n💰 Expected Price: S$"+Number(r.expected_price).toFixed(2)+"\n\nWe'll be in touch when it sells.\n\nLeisure Sports\n400 Orchard Road #04-22\n+65 6737 0656\nwww.leisuresports.sg";
+  window.open("https://wa.me/"+r.customer_phone.replace(/\D/g,"")+"?text="+encodeURIComponent(msg),"_blank");
+}
+
+async function doLookup() {
+  const code = document.getElementById("lookup-code").value.trim().toUpperCase(); if (!code) return;
+  const errEl = document.getElementById("lookup-error"), resEl = document.getElementById("lookup-result");
+  try {
+    const res = await fetch("/api/racquets/lookup/"+code);
+    if (!res.ok) { errEl.textContent = 'No racquet found with code "'+code+'"'; errEl.classList.remove("hidden"); resEl.classList.add("hidden"); return; }
+    const r = await res.json(); errEl.classList.add("hidden"); resEl.classList.remove("hidden"); resEl.innerHTML = renderDetail(r);
+  } catch (err) { errEl.textContent = "Search failed: "+err.message; errEl.classList.remove("hidden"); resEl.classList.add("hidden"); }
+}
+
+function renderDetail(r) {
+  const badge = r.status==="Available" ? '<span class="badge badge-available">'+r.status+'</span>' : '<span class="badge badge-sold">'+r.status+'</span>';
+  const photo = r.photo_path ? '<img src="'+r.photo_path+'" class="detail-photo" alt="Racquet">' : '';
+  const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
+  const dc = (l,v) => '<div class="detail-cell"><div class="detail-label">'+l+'</div><div class="detail-value">'+v+'</div></div>';
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Condition",r.condition)+dc("Head Size",r.head_size||"—")+dc("Weight",r.weight||"—")+dc("Grip Size",r.grip_size||"—")+dc("String",(r.string_brand||"—")+" "+(r.string_model||""))+dc("String Type",r.string_type||"—")+dc("Tension",r.string_tension||"—")+dc("Date In",fd(r.date_added))+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">💬 WhatsApp</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'')+'</div></div>';
+}
+
+async function markSold(code) {
+  if (!confirm("Mark this racquet as SOLD?")) return;
+  await fetch("/api/racquets/"+code+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Sold"})});
+  doLookup(); loadStats();
+}
+
+async function loadInventory() {
+  const search = document.getElementById("inv-search")?.value||"", status = document.getElementById("inv-status-filter")?.value||"";
+  const p = new URLSearchParams(); if (search) p.set("search",search); if (status) p.set("status",status);
+  const items = await (await fetch("/api/racquets?"+p)).json();
+  const el = document.getElementById("inv-list");
+  if (!items.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">'+(search||status?"No matches found.":"No racquets yet. Add your first one!")+'</div>'; return; }
+  const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "";
+  el.innerHTML = items.map(i => '<div class="card" style="padding:0;overflow:hidden;cursor:pointer" onclick="viewItem(\''+i.inventory_code+'\')"><div class="inv-item">'+(i.photo_path?'<img src="'+i.photo_path+'" class="inv-thumb" alt="">':'<div class="inv-thumb-placeholder">🎾</div>')+'<div class="inv-info"><div class="inv-title">'+i.brand+' '+i.model+'</div><div class="inv-meta"><span style="font-family:monospace;letter-spacing:0.5px">'+i.inventory_code+'</span> · '+i.customer_name+' · '+fd(i.date_added)+'</div></div><div style="text-align:right;flex-shrink:0"><div class="inv-price">S$'+Number(i.expected_price).toFixed(2)+'</div><span class="badge '+(i.status==="Available"?"badge-available":"badge-sold")+'">'+i.status+'</span></div></div></div>').join("");
+}
+async function viewItem(code) { document.getElementById("lookup-code").value = code; showView("lookup"); await doLookup(); }
+
+async function loadStats() {
+  try {
+    const s = await (await fetch("/api/stats")).json();
+    document.getElementById("stock-count").textContent = "("+s.total+")";
+    document.getElementById("stats-bar").innerHTML = '<div class="stat-card"><div class="stat-num">'+s.total+'</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-num" style="color:var(--success)">'+s.available+'</div><div class="stat-label">Available</div></div><div class="stat-card"><div class="stat-num" style="color:var(--danger)">'+s.sold+'</div><div class="stat-label">Sold</div></div><div class="stat-card"><div class="stat-num" style="color:var(--accent)">S$'+Number(s.totalValue).toFixed(0)+'</div><div class="stat-label">Stock Value</div></div>';
+  } catch(e){}
+}
+loadStats();
+</script>
+</body>
+</html>
