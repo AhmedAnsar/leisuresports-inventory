@@ -463,6 +463,50 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
   }
 });
 
+// ─── Admin: Reset all data ───
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "LS1978reset!";
+
+app.post("/api/admin/reset", async (req, res) => {
+  try {
+    const { confirm, password } = req.body;
+    if (password !== ADMIN_PASSWORD) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+    if (confirm !== "DELETE_ALL_DATA") {
+      return res.status(400).json({ error: "Send { confirm: 'DELETE_ALL_DATA', password: 'your_password' } to proceed" });
+    }
+
+    // Delete all racquet records
+    await db.run("DELETE FROM racquets");
+
+    // Reset sequence for PostgreSQL
+    if (IS_RAILWAY) {
+      try { await db.run("ALTER SEQUENCE racquets_id_seq RESTART WITH 1"); } catch (e) {}
+    }
+
+    // Delete all uploaded photos
+    if (fs.existsSync(UPLOADS_DIR)) {
+      const files = fs.readdirSync(UPLOADS_DIR);
+      for (const file of files) {
+        fs.unlinkSync(path.join(UPLOADS_DIR, file));
+      }
+    }
+
+    // Delete all generated PDFs
+    if (fs.existsSync(PDF_DIR)) {
+      const files = fs.readdirSync(PDF_DIR);
+      for (const file of files) {
+        fs.unlinkSync(path.join(PDF_DIR, file));
+      }
+    }
+
+    res.json({ success: true, message: "All data, photos, and PDFs have been deleted." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Stats ───
 app.get("/api/stats", async (req, res) => {
   try {

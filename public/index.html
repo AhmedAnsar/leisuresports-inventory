@@ -212,6 +212,20 @@
       </div>
     </div>
     <div id="inv-list"></div>
+    <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border)">
+      <button class="btn btn-sm" style="background:var(--surface2);color:var(--danger);border:1px solid var(--border);font-size:12px;padding:8px 14px" onclick="showResetConfirm()">⚠️ Reset All Data</button>
+    </div>
+    <div id="reset-confirm" class="hidden" style="margin-top:12px">
+      <div class="card" style="border:2px solid var(--danger)">
+        <div style="font-size:14px;font-weight:700;color:var(--danger);margin-bottom:10px">⚠️ Delete ALL racquets, photos, and PDFs?</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px">This cannot be undone. Type the admin password to confirm.</p>
+        <div class="field"><label>Admin Password</label><input type="password" id="reset-password" placeholder="Enter password"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-danger" onclick="doReset()">Yes, Delete Everything</button>
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('reset-confirm').classList.add('hidden')">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -390,6 +404,32 @@ async function loadStats() {
   } catch(e){}
 }
 loadStats();
+
+function showResetConfirm() {
+  document.getElementById("reset-confirm").classList.remove("hidden");
+  document.getElementById("reset-password").value = "";
+  document.getElementById("reset-password").focus();
+}
+
+async function doReset() {
+  const pw = document.getElementById("reset-password").value;
+  if (!pw) { alert("Please enter the admin password."); return; }
+  try {
+    const res = await fetch("/api/admin/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirm: "DELETE_ALL_DATA", password: pw })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      alert("All data has been deleted. Starting fresh!");
+      document.getElementById("reset-confirm").classList.add("hidden");
+      loadInventory(); loadStats();
+    } else {
+      alert("Error: " + (data.error || "Reset failed"));
+    }
+  } catch (err) { alert("Error: " + err.message); }
+}
 </script>
 </body>
 </html>
