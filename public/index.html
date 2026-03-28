@@ -301,7 +301,12 @@ function downloadPDFForCode(code) { window.open("/api/racquets/"+code+"/pdf","_b
 
 function sendWhatsApp() { if (lastAddedRacquet) sendWhatsAppFor(lastAddedRacquet); }
 function sendWhatsAppFor(r) {
-  const msg = "Hi "+r.customer_name+",\n\nThank you for visiting Leisure Sports!\n\nYour racquet has been received for consignment:\n\n🏸 "+r.brand+" "+r.model+"\n🏷️ Inventory Code: "+r.inventory_code+"\n💰 Expected Price: S$"+Number(r.expected_price).toFixed(2)+"\n\nWe'll be in touch when it sells.\n\nLeisure Sports\n400 Orchard Road #04-22\n+65 6737 0656\nwww.leisuresports.sg";
+  let msg;
+  if (r.status === "Sold") {
+    msg = "Hi "+r.customer_name+",\n\nGreat news from Leisure Sports! 🎉\n\nYour racquet has been sold:\n\n🏸 "+r.brand+" "+r.model+"\n🏷️ Inventory Code: "+r.inventory_code+"\n💰 Sold Price: S$"+Number(r.expected_price).toFixed(2)+"\n\nPlease visit us to collect your payment.\n\nLeisure Sports\n400 Orchard Road #04-22\n+65 6737 0656\nwww.leisuresports.sg";
+  } else {
+    msg = "Hi "+r.customer_name+",\n\nThank you for visiting Leisure Sports!\n\nYour racquet has been received for consignment:\n\n🏸 "+r.brand+" "+r.model+"\n🏷️ Inventory Code: "+r.inventory_code+"\n💰 Expected Price: S$"+Number(r.expected_price).toFixed(2)+"\n\nWe'll be in touch when it sells.\n\nLeisure Sports\n400 Orchard Road #04-22\n+65 6737 0656\nwww.leisuresports.sg";
+  }
   window.open("https://wa.me/"+r.customer_phone.replace(/\D/g,"")+"?text="+encodeURIComponent(msg),"_blank");
 }
 
@@ -351,12 +356,18 @@ function renderDetail(r) {
   const photo = r.photo_path ? '<img src="'+r.photo_path+'" class="detail-photo" alt="Racquet">' : '';
   const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
   const dc = (l,v) => '<div class="detail-cell"><div class="detail-label">'+l+'</div><div class="detail-value">'+v+'</div></div>';
-  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">💬 WhatsApp</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'')+'</div></div>';
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">'+(r.status==="Sold"?"💬 Notify Sold":"💬 WhatsApp")+'</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="markAvailable(\''+r.inventory_code+'\')">Mark as Available</button>')+'</div></div>';
 }
 
 async function markSold(code) {
   if (!confirm("Mark this racquet as SOLD?")) return;
   await fetch("/api/racquets/"+code+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Sold"})});
+  doLookup(); loadStats();
+}
+
+async function markAvailable(code) {
+  if (!confirm("Change this racquet back to AVAILABLE?")) return;
+  await fetch("/api/racquets/"+code+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Available"})});
   doLookup(); loadStats();
 }
 
