@@ -135,33 +135,17 @@
       <div class="card">
         <div class="section-title">👤 Customer Details</div>
         <div class="field"><label>Full Name <span class="req">*</span></label><input type="text" name="customer_name" required placeholder="Customer name"></div>
-        <div class="row row-2">
-          <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" name="customer_phone" required placeholder="+65 9123 4567"></div>
-          <div class="field"><label>Email</label><input type="email" name="customer_email" placeholder="email@example.com"></div>
-        </div>
+        <div class="field"><label>Phone <span class="req">*</span></label><input type="tel" name="customer_phone" required placeholder="+65 9123 4567"></div>
       </div>
       <div class="card">
         <div class="section-title">🏸 Racquet Details</div>
         <div class="row row-2">
-          <div class="field"><label>Brand <span class="req">*</span></label><select name="brand" id="brand-select" required><option value="">Select brand...</option></select></div>
-          <div class="field"><label>Model <span class="req">*</span></label><select name="model" id="model-select" required><option value="">Pick brand first</option></select></div>
+          <div class="field"><label>Brand <span class="req">*</span></label><select id="brand-select" required><option value="">Select brand...</option></select><input type="text" id="brand-custom" class="hidden" placeholder="Type custom brand name" style="margin-top:6px"><input type="hidden" name="brand" id="brand-value"></div>
+          <div class="field"><label>Model <span class="req">*</span></label><select id="model-select" required><option value="">Pick brand first</option></select><input type="text" id="model-custom" class="hidden" placeholder="Type custom model name" style="margin-top:6px"><input type="hidden" name="model" id="model-value"></div>
         </div>
-        <div class="row row-3">
-          <div class="field"><label>Head Size</label><input type="text" name="head_size" placeholder="100 sq in"></div>
-          <div class="field"><label>Weight</label><input type="text" name="weight" placeholder="300g"></div>
+        <div class="row row-2">
+          <div class="field"><label>Variant</label><input type="text" name="head_size" placeholder="e.g. 98L, 100, 97 V14"></div>
           <div class="field"><label>Grip Size</label><select name="grip_size"><option value="">Select...</option><option>0 (4")</option><option>1 (4⅛")</option><option>2 (4¼")</option><option>3 (4⅜")</option><option>4 (4½")</option><option>5 (4⅝")</option></select></div>
-        </div>
-        <div class="field"><label>Condition <span class="req">*</span></label><select name="condition" required><option value="">Rate condition...</option><option>Excellent</option><option>Good</option><option>Fair</option><option>Poor</option></select></div>
-      </div>
-      <div class="card">
-        <div class="section-title">🧵 String Details</div>
-        <div class="row row-2">
-          <div class="field"><label>String Brand</label><select name="string_brand"><option value="">Select...</option><option>Luxilon</option><option>Babolat</option><option>Wilson</option><option>Head</option><option>Tecnifibre</option><option>Solinco</option><option>Yonex</option><option>Volkl</option><option>Gamma</option><option>Kirschbaum</option><option>Tourna</option><option>Prince</option><option>Dunlop</option><option>Other</option></select></div>
-          <div class="field"><label>String Model</label><input type="text" name="string_model" placeholder="e.g. ALU Power"></div>
-        </div>
-        <div class="row row-2">
-          <div class="field"><label>String Type</label><select name="string_type"><option value="">Select...</option><option>Polyester</option><option>Multifilament</option><option>Synthetic Gut</option><option>Natural Gut</option><option>Hybrid</option></select></div>
-          <div class="field"><label>Tension</label><input type="text" name="string_tension" placeholder="55 lbs"></div>
         </div>
       </div>
       <div class="card">
@@ -223,7 +207,7 @@
     <div class="card" style="padding-bottom:14px">
       <div class="section-title">📦 All Racquets</div>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input type="text" id="inv-search" placeholder="Filter by code, brand, model, customer..." style="flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text)" oninput="loadInventory()">
+        <input type="text" id="inv-search" placeholder="Filter by code, brand, model, customer, phone..." style="flex:1;padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text)" oninput="loadInventory()">
         <select id="inv-status-filter" style="padding:10px;border:2px solid var(--border);border-radius:8px;font-size:13px;background:var(--input-bg);color:var(--text);appearance:none;padding-right:28px;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 12 12%27%3E%3Cpath fill=%27%23a89e90%27 d=%27M6 8L1 3h10z%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center" onchange="loadInventory()"><option value="">All</option><option value="Available">Available</option><option value="Sold">Sold</option></select>
       </div>
     </div>
@@ -248,11 +232,35 @@ let lastAddedRacquet = null;
 
 const brandSel = document.getElementById("brand-select");
 const modelSel = document.getElementById("model-select");
+const brandCustom = document.getElementById("brand-custom");
+const modelCustom = document.getElementById("model-custom");
+const brandValue = document.getElementById("brand-value");
+const modelValue = document.getElementById("model-value");
+
 Object.keys(BRANDS).forEach(b => { const o = document.createElement("option"); o.value = b; o.textContent = b; brandSel.appendChild(o); });
+
 brandSel.addEventListener("change", () => {
+  const isOther = brandSel.value === "Other";
+  brandCustom.classList.toggle("hidden", !isOther);
+  if (isOther) { brandCustom.value = ""; brandCustom.focus(); }
+
   modelSel.innerHTML = '<option value="">Select model...</option>';
-  (BRANDS[brandSel.value]||[]).forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; modelSel.appendChild(o); });
+  modelCustom.classList.add("hidden");
+  const models = BRANDS[brandSel.value] || [];
+  models.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; modelSel.appendChild(o); });
 });
+
+modelSel.addEventListener("change", () => {
+  const isOther = modelSel.value === "Custom / Unlisted";
+  modelCustom.classList.toggle("hidden", !isOther);
+  if (isOther) { modelCustom.value = ""; modelCustom.focus(); }
+});
+
+// Sync hidden fields before submit
+function syncBrandModel() {
+  brandValue.value = brandSel.value === "Other" ? brandCustom.value : brandSel.value;
+  modelValue.value = modelSel.value === "Custom / Unlisted" ? modelCustom.value : modelSel.value;
+}
 
 document.getElementById("photo-input").addEventListener("change", function() {
   const file = this.files[0]; if (!file) return;
@@ -269,6 +277,9 @@ function showView(v) {
 
 document.getElementById("intake-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  syncBrandModel();
+  if (!brandValue.value) { alert("Please enter a brand name."); return; }
+  if (!modelValue.value) { alert("Please enter a model name."); return; }
   try {
     const res = await fetch("/api/racquets", { method: "POST", body: new FormData(e.target) });
     const data = await res.json();
@@ -278,6 +289,8 @@ document.getElementById("intake-form").addEventListener("submit", async (e) => {
       document.getElementById("intake-form").classList.add("hidden");
       document.getElementById("success-view").classList.remove("hidden");
       e.target.reset(); removePhoto(); loadStats();
+      brandCustom.classList.add("hidden"); modelCustom.classList.add("hidden");
+      modelSel.innerHTML = '<option value="">Pick brand first</option>';
     } else { alert("Error: "+(data.error||"Failed to save")); }
   } catch (err) { alert("Error: "+err.message); }
 });
@@ -338,7 +351,7 @@ function renderDetail(r) {
   const photo = r.photo_path ? '<img src="'+r.photo_path+'" class="detail-photo" alt="Racquet">' : '';
   const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
   const dc = (l,v) => '<div class="detail-cell"><div class="detail-label">'+l+'</div><div class="detail-value">'+v+'</div></div>';
-  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Condition",r.condition)+dc("Head Size",r.head_size||"—")+dc("Weight",r.weight||"—")+dc("Grip Size",r.grip_size||"—")+dc("String",(r.string_brand||"—")+" "+(r.string_model||""))+dc("String Type",r.string_type||"—")+dc("Tension",r.string_tension||"—")+dc("Date In",fd(r.date_added))+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">💬 WhatsApp</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'')+'</div></div>';
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">💬 WhatsApp</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'')+'</div></div>';
 }
 
 async function markSold(code) {

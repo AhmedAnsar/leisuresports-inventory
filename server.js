@@ -184,11 +184,19 @@ async function initDB() {
 }
 
 // ─── Inventory Code Generator ───
-function generateInventoryCode() {
-  const prefix = "LS";
-  const ts = Date.now().toString(36).toUpperCase().slice(-4);
-  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
-  return `${prefix}-${ts}-${rand}`;
+async function generateInventoryCode() {
+  const prefix = "LS-A";
+  // Get the highest existing number
+  const row = await db.get(
+    "SELECT inventory_code FROM racquets WHERE inventory_code LIKE 'LS-A-%' ORDER BY id DESC LIMIT 1"
+  );
+  let nextNum = 1;
+  if (row && row.inventory_code) {
+    const parts = row.inventory_code.split("-");
+    const lastNum = parseInt(parts[2], 10);
+    if (!isNaN(lastNum)) nextNum = lastNum + 1;
+  }
+  return `${prefix}-${String(nextNum).padStart(4, "0")}`;
 }
 
 // ─── API Routes ───
@@ -200,7 +208,7 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.post("/api/racquets", upload.single("photo"), async (req, res) => {
   try {
     const b = req.body;
-    const code = generateInventoryCode();
+    const code = await generateInventoryCode();
     const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
     await db.run(
@@ -213,17 +221,17 @@ app.post("/api/racquets", upload.single("photo"), async (req, res) => {
         code,
         b.customer_name,
         b.customer_phone,
-        b.customer_email || null,
+        null,
         b.brand,
         b.model,
         b.head_size || null,
-        b.weight || null,
+        null,
         b.grip_size || null,
-        b.condition,
-        b.string_brand || null,
-        b.string_model || null,
-        b.string_type || null,
-        b.string_tension || null,
+        "Good",
+        null,
+        null,
+        null,
+        null,
         parseFloat(b.expected_price),
         b.notes || null,
         photoPath,
@@ -251,12 +259,12 @@ app.get("/api/racquets", async (req, res) => {
 
     if (search) {
       if (IS_RAILWAY) {
-        sql += ` AND (inventory_code ILIKE $${params.length + 1} OR brand ILIKE $${params.length + 2} OR model ILIKE $${params.length + 3} OR customer_name ILIKE $${params.length + 4})`;
+        sql += ` AND (inventory_code ILIKE $${params.length + 1} OR brand ILIKE $${params.length + 2} OR model ILIKE $${params.length + 3} OR customer_name ILIKE $${params.length + 4} OR customer_phone ILIKE $${params.length + 5})`;
       } else {
-        sql += ` AND (inventory_code LIKE ? OR brand LIKE ? OR model LIKE ? OR customer_name LIKE ?)`;
+        sql += ` AND (inventory_code LIKE ? OR brand LIKE ? OR model LIKE ? OR customer_name LIKE ? OR customer_phone LIKE ?)`;
       }
       const s = `%${search}%`;
-      params.push(s, s, s, s);
+      params.push(s, s, s, s, s);
     }
     if (status) {
       if (IS_RAILWAY) {
@@ -399,25 +407,14 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
     y = sectionHeader(doc, "CUSTOMER DETAILS", y, accent);
     y = tableRow(doc, "Name", item.customer_name, y);
     y = tableRow(doc, "Phone", item.customer_phone, y);
-    y = tableRow(doc, "Email", item.customer_email || "—", y);
     y += 10;
 
     // ── Racquet ──
     y = sectionHeader(doc, "RACQUET DETAILS", y, accent);
     y = tableRow(doc, "Brand", item.brand, y);
     y = tableRow(doc, "Model", item.model, y);
-    y = tableRow(doc, "Head Size", item.head_size ? item.head_size + " sq in" : "—", y);
-    y = tableRow(doc, "Weight", item.weight ? item.weight + "g" : "—", y);
+    y = tableRow(doc, "Variant", item.head_size || "—", y);
     y = tableRow(doc, "Grip Size", item.grip_size || "—", y);
-    y = tableRow(doc, "Condition", item.condition, y);
-    y += 10;
-
-    // ── Strings ──
-    y = sectionHeader(doc, "STRING DETAILS", y, accent);
-    y = tableRow(doc, "String Brand", item.string_brand || "—", y);
-    y = tableRow(doc, "String Model", item.string_model || "—", y);
-    y = tableRow(doc, "String Type", item.string_type || "—", y);
-    y = tableRow(doc, "Tension", item.string_tension ? item.string_tension + " lbs" : "—", y);
     y += 10;
 
     // ── Price ──
