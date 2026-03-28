@@ -303,7 +303,7 @@ function sendWhatsApp() { if (lastAddedRacquet) sendWhatsAppFor(lastAddedRacquet
 function sendWhatsAppFor(r) {
   let msg;
   if (r.status === "Sold") {
-    msg = "Hi "+r.customer_name+",\n\nGreat news from Leisure Sports! 🎉\n\nYour racquet has been sold:\n\n🏸 "+r.brand+" "+r.model+"\n🏷️ Inventory Code: "+r.inventory_code+"\n💰 Sold Price: S$"+Number(r.expected_price).toFixed(2)+"\n\nPlease visit us to collect your payment.\n\nLeisure Sports\n400 Orchard Road #04-22\n+65 6737 0656\nwww.leisuresports.sg";
+    msg = "Hi "+r.customer_name+",\n\nGreat news from Leisure Sports! 🎉\n\nYour racquet has been sold:\n\n🏸 "+r.brand+" "+r.model+"\n🏷️ Inventory Code: "+r.inventory_code+"\n💰 Sold Price: S$"+Number(r.expected_price).toFixed(2)+"\n\nLeisure Sports\n400 Orchard Road #04-22\n+65 6737 0656\nwww.leisuresports.sg";
   } else {
     msg = "Hi "+r.customer_name+",\n\nThank you for visiting Leisure Sports!\n\nYour racquet has been received for consignment:\n\n🏸 "+r.brand+" "+r.model+"\n🏷️ Inventory Code: "+r.inventory_code+"\n💰 Expected Price: S$"+Number(r.expected_price).toFixed(2)+"\n\nWe'll be in touch when it sells.\n\nLeisure Sports\n400 Orchard Road #04-22\n+65 6737 0656\nwww.leisuresports.sg";
   }
