@@ -482,6 +482,58 @@ app.get("/api/stats", async (req, res) => {
   }
 });
 
+// ─── Public Storefront API (no customer details) ───
+app.get("/api/public/racquets", async (req, res) => {
+  try {
+    const search = req.query.search || "";
+    let sql;
+    const params = [];
+
+    if (IS_RAILWAY) {
+      sql = "SELECT inventory_code, brand, model, head_size, grip_size, expected_price, photo_path, date_added FROM racquets WHERE status = 'Available'";
+      if (search) {
+        sql += ` AND (inventory_code ILIKE $1 OR brand ILIKE $2 OR model ILIKE $3)`;
+        const s = `%${search}%`;
+        params.push(s, s, s);
+      }
+    } else {
+      sql = "SELECT inventory_code, brand, model, head_size, grip_size, expected_price, photo_path, date_added FROM racquets WHERE status = 'Available'";
+      if (search) {
+        sql += ` AND (inventory_code LIKE ? OR brand LIKE ? OR model LIKE ?)`;
+        const s = `%${search}%`;
+        params.push(s, s, s);
+      }
+    }
+    sql += " ORDER BY id DESC";
+
+    const rows = await db.all(sql, params);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/public/racquets/:code", async (req, res) => {
+  try {
+    const row = await db.get(
+      "SELECT inventory_code, brand, model, head_size, grip_size, expected_price, photo_path, date_added FROM racquets WHERE inventory_code = ? AND status = 'Available'",
+      [req.params.code.toUpperCase()]
+    );
+    if (row) {
+      res.json(row);
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Serve public storefront page
+app.get("/shop", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "shop.html"));
+});
+
 // ─── Helpers ───
 function formatDatePDF(d) {
   if (!d) return "";

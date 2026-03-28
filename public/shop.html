@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Leisure Sports - Pre-Owned Racquets</title>
+<link rel="icon" href="https://www.leisuresports.sg/image/cache/Final-Logo copy-800x340.jpg" type="image/jpeg">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f4f0; --surface: #ffffff; --surface2: #f0ebe4;
+    --accent: #9c7f4a; --accent2: #c8a96e; --accent-light: #f5eedd;
+    --text: #1a1612; --text2: #6b6054; --border: #e0d8ce;
+    --input-bg: #ffffff; --success: #5a9e6f; --danger: #c45a5a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  a { color: var(--accent); text-decoration: none; }
+
+  .header {
+    background: #1a1612; padding: 16px 20px; border-bottom: 3px solid var(--accent2);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .logo-area { display: flex; align-items: center; gap: 14px; }
+  .logo-img { height: 44px; border-radius: 4px; object-fit: contain; }
+  .logo-text { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--accent2); letter-spacing: 1px; }
+  .logo-sub { font-size: 9px; color: #a89e90; letter-spacing: 2px; text-transform: uppercase; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-link { color: #a89e90; font-size: 13px; font-weight: 500; transition: color 0.2s; }
+  .header-link:hover { color: var(--accent2); }
+
+  .hero {
+    background: linear-gradient(135deg, #241f1a, #1a1612);
+    padding: 32px 20px; text-align: center; color: #f5f0e8;
+  }
+  .hero h1 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--accent2); margin-bottom: 6px; }
+  .hero p { font-size: 14px; color: #a89e90; max-width: 500px; margin: 0 auto; }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .search-bar {
+    display: flex; gap: 10px; margin-bottom: 20px; padding: 16px; background: var(--surface);
+    border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .search-bar input {
+    flex: 1; padding: 12px 14px; border: 2px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: var(--bg); color: var(--text);
+  }
+  .search-bar input:focus { border-color: var(--accent); outline: none; }
+  .search-bar select {
+    padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 13px;
+    font-family: inherit; background: var(--bg); color: var(--text); appearance: none; cursor: pointer;
+    padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6054' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center;
+  }
+
+  .count-bar { font-size: 13px; color: var(--text2); margin-bottom: 14px; padding: 0 4px; }
+  .count-bar strong { color: var(--accent); }
+
+  .racquet-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+  .racquet-card {
+    background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
+    overflow: hidden; cursor: pointer; transition: box-shadow 0.2s, transform 0.2s;
+    display: flex; align-items: stretch;
+  }
+  .racquet-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .card-photo {
+    width: 120px; min-height: 120px; flex-shrink: 0; background: var(--surface2);
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
+    overflow: hidden;
+  }
+  .card-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .card-body { flex: 1; padding: 16px; display: flex; flex-direction: column; justify-content: center; }
+  .card-brand { font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+  .card-model { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .card-details { font-size: 13px; color: var(--text2); margin-top: 6px; }
+  .card-details span { margin-right: 12px; }
+  .card-price { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--accent); margin-top: 8px; }
+  .card-code { font-family: monospace; font-size: 11px; color: var(--text2); letter-spacing: 0.5px; margin-top: 4px; }
+
+  @media (max-width: 500px) {
+    .card-photo { width: 90px; min-height: 90px; }
+    .card-model { font-size: 16px; }
+    .card-price { font-size: 18px; }
+  }
+
+  /* Detail modal overlay */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);
+    z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal {
+    background: var(--surface); border-radius: 16px; max-width: 500px; width: 100%;
+    max-height: 90vh; overflow-y: auto; position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--surface2); border: none; cursor: pointer; font-size: 18px; color: var(--text2);
+    display: flex; align-items: center; justify-content: center; z-index: 10;
+  }
+  .modal-close:hover { background: var(--border); }
+  .modal-photo { width: 100%; max-height: 300px; object-fit: contain; background: var(--surface2); border-radius: 16px 16px 0 0; }
+  .modal-photo-placeholder {
+    width: 100%; height: 180px; background: var(--surface2); border-radius: 16px 16px 0 0;
+    display: flex; align-items: center; justify-content: center; font-size: 56px;
+  }
+  .modal-body { padding: 24px; }
+  .modal-brand { font-size: 12px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+  .modal-model { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin-top: 4px; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 16px; }
+  .modal-cell { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .modal-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+  .modal-val { font-size: 14px; font-weight: 500; margin-top: 2px; }
+  .modal-price {
+    margin-top: 16px; padding: 16px; background: var(--accent-light); border-radius: 10px;
+    text-align: center;
+  }
+  .modal-price-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+  .modal-price-value { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+
+  .btn {
+    padding: 14px 24px; border: none; border-radius: 10px; cursor: pointer;
+    font-size: 15px; font-weight: 600; font-family: inherit; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  }
+  .btn-whatsapp { background: #25D366; color: #fff; margin-top: 16px; }
+  .btn-whatsapp:hover { background: #1fb855; }
+  .btn-call { background: var(--surface2); color: var(--text); margin-top: 8px; border: 1px solid var(--border); }
+
+  .footer {
+    text-align: center; padding: 24px 16px; font-size: 12px; color: var(--text2);
+    border-top: 1px solid var(--border); margin-top: 32px;
+  }
+  .footer a { font-weight: 600; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-area">
+    <img src="https://www.leisuresports.sg/image/cache/Final-Logo copy-800x340.jpg" alt="Leisure Sports" class="logo-img"
+         onerror="this.style.display='none'">
+    <div>
+      <div class="logo-text">LEISURE SPORTS</div>
+      <div class="logo-sub">Tennis Pro Shop · Est. 1978</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <a href="https://www.leisuresports.sg" target="_blank" class="header-link">Visit Store →</a>
+  </div>
+</div>
+
+<div class="hero">
+  <h1>Pre-Owned Racquets</h1>
+  <p>Quality second-hand tennis racquets available at our Orchard Road shop. All racquets are inspected and ready to play.</p>
+</div>
+
+<div class="container">
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search by brand or model..." oninput="loadRacquets()">
+    <select id="brand-filter" onchange="loadRacquets()">
+      <option value="">All Brands</option>
+    </select>
+  </div>
+
+  <div class="count-bar" id="count-bar"></div>
+  <div class="racquet-grid" id="racquet-list"></div>
+
+  <div class="footer">
+    <strong>Leisure Sports</strong> · 400 Orchard Road #04-22 Singapore 238875<br>
+    <a href="tel:+6567370656">+65 6737 0656</a> · <a href="https://www.leisuresports.sg" target="_blank">www.leisuresports.sg</a><br><br>
+    Want to sell your racquet? Visit us in store for a consignment.
+  </div>
+</div>
+
+<div id="modal-container"></div>
+
+<script>
+const SHOP_PHONE = "6567370656";
+
+async function loadRacquets() {
+  const search = document.getElementById("search-input").value.trim();
+  const brand = document.getElementById("brand-filter").value;
+  const query = brand || search;
+  const params = query ? "?search="+encodeURIComponent(query) : "";
+
+  try {
+    const res = await fetch("/api/public/racquets"+params);
+    let items = await res.json();
+
+    // Client-side brand filter if both search and brand are set
+    if (brand && search) {
+      items = items.filter(i =>
+        i.brand.toLowerCase().includes(search.toLowerCase()) ||
+        i.model.toLowerCase().includes(search.toLowerCase()) ||
+        i.inventory_code.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    const el = document.getElementById("racquet-list");
+    const countEl = document.getElementById("count-bar");
+
+    if (!items.length) {
+      countEl.innerHTML = "";
+      el.innerHTML = '<div class="empty-state"><div class="icon">🎾</div><div style="font-size:16px;font-weight:600;margin-bottom:6px">No racquets found</div><div>Try a different search or check back later for new arrivals.</div></div>';
+      return;
+    }
+
+    countEl.innerHTML = '<strong>'+items.length+'</strong> racquet'+(items.length!==1?'s':'')+' available';
+
+    const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "";
+
+    el.innerHTML = items.map(r => {
+      const photo = r.photo_path
+        ? '<img src="'+r.photo_path+'" alt="'+r.brand+' '+r.model+'">'
+        : '';
+      const placeholder = r.photo_path ? '' : '🎾';
+      return '<div class="racquet-card" onclick=\'showDetail('+JSON.stringify(r).replace(/'/g,"&#39;")+')\'>'+
+        '<div class="card-photo">'+(photo||placeholder)+'</div>'+
+        '<div class="card-body">'+
+          '<div class="card-brand">'+r.brand+'</div>'+
+          '<div class="card-model">'+r.model+'</div>'+
+          '<div class="card-details">'+
+            (r.head_size ? '<span>'+r.head_size+'</span>' : '')+
+            (r.grip_size ? '<span>Grip '+r.grip_size+'</span>' : '')+
+          '</div>'+
+          '<div class="card-price">S$'+Number(r.expected_price).toFixed(2)+'</div>'+
+          '<div class="card-code">'+r.inventory_code+'</div>'+
+        '</div></div>';
+    }).join("");
+
+    // Populate brand filter
+    populateBrandFilter(items);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+let brandsPopulated = false;
+function populateBrandFilter(items) {
+  if (brandsPopulated) return;
+  const brands = [...new Set(items.map(i => i.brand))].sort();
+  const sel = document.getElementById("brand-filter");
+  brands.forEach(b => {
+    const o = document.createElement("option");
+    o.value = b; o.textContent = b;
+    sel.appendChild(o);
+  });
+  brandsPopulated = true;
+}
+
+function showDetail(r) {
+  const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
+  const mc = (l,v) => '<div class="modal-cell"><div class="modal-label">'+l+'</div><div class="modal-val">'+v+'</div></div>';
+
+  const whatsappMsg = "Hi Leisure Sports,\n\nI'm interested in this pre-owned racquet:\n\n🏸 "+r.brand+" "+r.model+
+    (r.head_size ? "\n📐 Variant: "+r.head_size : "")+
+    "\n🏷️ Code: "+r.inventory_code+
+    "\n💰 Price: S$"+Number(r.expected_price).toFixed(2)+
+    "\n\nIs it still available? I'd like to know more.\n\nThank you!";
+
+  const html = '<div class="modal-overlay" onclick="closeDetail(event)">'+
+    '<div class="modal" onclick="event.stopPropagation()">'+
+      '<button class="modal-close" onclick="closeDetail()">×</button>'+
+      (r.photo_path
+        ? '<img src="'+r.photo_path+'" class="modal-photo" alt="'+r.brand+' '+r.model+'">'
+        : '<div class="modal-photo-placeholder">🎾</div>')+
+      '<div class="modal-body">'+
+        '<div class="modal-brand">'+r.brand+'</div>'+
+        '<div class="modal-model">'+r.model+'</div>'+
+        '<div class="modal-grid">'+
+          mc("Variant", r.head_size || "—")+
+          mc("Grip Size", r.grip_size || "—")+
+          mc("Code", r.inventory_code)+
+          mc("Listed", fd(r.date_added))+
+        '</div>'+
+        '<div class="modal-price">'+
+          '<div class="modal-price-label">Price</div>'+
+          '<div class="modal-price-value">S$'+Number(r.expected_price).toFixed(2)+'</div>'+
+        '</div>'+
+        '<a href="https://wa.me/'+SHOP_PHONE+'?text='+encodeURIComponent(whatsappMsg)+'" target="_blank" class="btn btn-whatsapp" style="text-decoration:none">'+
+          '💬 I\'m Interested — WhatsApp Us'+
+        '</a>'+
+        '<a href="tel:+65 6737 0656" class="btn btn-call" style="text-decoration:none">'+
+          '📞 Call Shop: +65 6737 0656'+
+        '</a>'+
+      '</div>'+
+    '</div></div>';
+
+  document.getElementById("modal-container").innerHTML = html;
+  document.body.style.overflow = "hidden";
+}
+
+function closeDetail(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById("modal-container").innerHTML = "";
+  document.body.style.overflow = "";
+}
+
+// Close on Escape key
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDetail(); });
+
+// Init
+loadRacquets();
+</script>
+</body>
+</html>
