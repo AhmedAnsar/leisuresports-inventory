@@ -370,7 +370,7 @@ function renderDetail(r) {
   const photo = r.photo_path ? '<img src="'+r.photo_path+'" class="detail-photo" alt="Racquet">' : '';
   const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
   const dc = (l,v) => '<div class="detail-cell"><div class="detail-label">'+l+'</div><div class="detail-value">'+v+'</div></div>';
-  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">'+(r.status==="Sold"?"💬 Notify Sold":"💬 WhatsApp")+'</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="markAvailable(\''+r.inventory_code+'\')">Mark as Available</button>')+'</div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)"><button class="btn btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:12px" onclick="returnToCustomer(\''+r.inventory_code+'\','+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">🔙 Return Racquet to Customer</button></div></div>';
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">'+(r.status==="Sold"?"💬 Notify Sold":"💬 WhatsApp")+'</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="markAvailable(\''+r.inventory_code+'\')">Mark as Available</button>')+'</div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:12px" onclick="returnToCustomer(\''+r.inventory_code+'\','+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">🔙 Return Racquet to Customer</button><button class="btn btn-sm" style="background:var(--surface2);color:var(--danger);border:1px solid var(--border);font-size:12px" onclick="adminDelete(\''+r.inventory_code+'\')">🗑️ Delete Record</button></div></div>';
 }
 
 async function markSold(code) {
@@ -401,6 +401,27 @@ async function returnToCustomer(code, r) {
       document.getElementById("lookup-error").classList.remove("hidden");
       loadStats();
     } else { alert("Error: "+(data.error||"Delete failed")); }
+  } catch (err) { alert("Error: "+err.message); }
+}
+
+async function adminDelete(code) {
+  const pw = prompt("Enter delete password to remove this record permanently:");
+  if (!pw) return;
+  try {
+    const res = await fetch("/api/racquets/"+code+"/admin-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById("lookup-result").classList.add("hidden");
+      document.getElementById("lookup-error").innerHTML = '<span style="color:var(--success)">✓ Record '+code+' deleted from inventory.</span>';
+      document.getElementById("lookup-error").classList.remove("hidden");
+      loadStats();
+    } else {
+      alert("Error: " + (data.error || "Delete failed"));
+    }
   } catch (err) { alert("Error: "+err.message); }
 }
 

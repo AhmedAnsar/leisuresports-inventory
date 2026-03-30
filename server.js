@@ -379,6 +379,39 @@ app.delete("/api/racquets/:code", async (req, res) => {
   }
 });
 
+// Password-protected admin delete
+app.post("/api/racquets/:code/admin-delete", async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password !== DELETE_PASSWORD) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    const item = await db.get(
+      "SELECT photo_path FROM racquets WHERE inventory_code = ?",
+      [req.params.code]
+    );
+    if (!item) return res.status(404).json({ error: "Not found" });
+
+    await db.run("DELETE FROM racquets WHERE inventory_code = ?", [
+      req.params.code,
+    ]);
+
+    if (item.photo_path) {
+      const absPhoto = IS_RAILWAY
+        ? path.join(RAILWAY_VOLUME, item.photo_path.replace(/^\//, ""))
+        : path.join(__dirname, item.photo_path);
+      if (fs.existsSync(absPhoto)) {
+        try { fs.unlinkSync(absPhoto); } catch (e) {}
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── PDF Generation ───
 app.get("/api/racquets/:code/pdf", async (req, res) => {
   try {
@@ -483,6 +516,7 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
 
 // ─── Admin: Reset all data ───
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "LS1978reset!";
+const DELETE_PASSWORD = process.env.DELETE_PASSWORD || "LSdelete!";
 
 app.post("/api/admin/reset", async (req, res) => {
   try {
