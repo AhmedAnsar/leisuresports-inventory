@@ -440,8 +440,6 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
     );
     if (!item) return res.status(404).json({ error: "Not found" });
 
-    const pdfPath = path.join(PDF_DIR, `${item.inventory_code}.pdf`);
-
     // Generate QR code linking to public shop page
     const shopBaseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
@@ -454,8 +452,11 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
     const qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
 
     const doc = new PDFDocument({ size: "A4", margin: 50 });
-    const stream = fs.createWriteStream(pdfPath);
-    doc.pipe(stream);
+
+    // Stream directly to response — no file saved on server
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${item.inventory_code}.pdf"`);
+    doc.pipe(res);
 
     const W = doc.page.width - 100;
     const accent = "#c8a96e";
@@ -527,10 +528,6 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
     doc.fill("#bbb").fontSize(7).text("400 Orchard Road #04-22 Singapore 238875 · www.leisuresports.sg", 50, footerY + 22, { width: W, align: "center" });
 
     doc.end();
-
-    stream.on("finish", () => {
-      res.download(pdfPath, `${item.inventory_code}.pdf`);
-    });
   } catch (err) {
     console.error("PDF error:", err);
     res.status(500).json({ error: "PDF generation failed" });
