@@ -423,8 +423,12 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
 
     const pdfPath = path.join(PDF_DIR, `${item.inventory_code}.pdf`);
 
-    // Generate QR code
-    const qrDataUrl = await QRCode.toDataURL(item.inventory_code, {
+    // Generate QR code linking to public shop page
+    const shopBaseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : (process.env.RAILWAY_STATIC_URL || `http://localhost:${PORT}`);
+    const qrUrl = `${shopBaseUrl}/shop?code=${item.inventory_code}`;
+    const qrDataUrl = await QRCode.toDataURL(qrUrl, {
       width: 120,
       margin: 1,
     });

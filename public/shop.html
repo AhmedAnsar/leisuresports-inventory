@@ -308,6 +308,20 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDetai
 
 // Init
 loadRacquets();
+
+// Auto-open racquet if ?code= parameter is in URL (from QR scan)
+(async function checkQRCode() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (!code) return;
+  try {
+    const res = await fetch("/api/public/racquets/"+encodeURIComponent(code.toUpperCase()));
+    if (res.ok) {
+      const r = await res.json();
+      showDetail(r);
+    }
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>
