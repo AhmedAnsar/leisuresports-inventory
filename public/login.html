@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Leisure Sports - Login</title>
+<link rel="icon" href="https://www.leisuresports.sg/image/cache/Final-Logo copy-800x340.jpg" type="image/jpeg">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: #1a1612; color: #f5f0e8; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-card {
+    background: #241f1a; border-radius: 16px; padding: 40px 32px;
+    border: 1px solid #3a3228; max-width: 380px; width: 100%; margin: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .logo-area { text-align: center; margin-bottom: 28px; }
+  .logo-img { height: 50px; border-radius: 4px; margin-bottom: 12px; }
+  .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #c8a96e; letter-spacing: 1px; }
+  .logo-sub { font-size: 10px; color: #a89e90; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #a89e90; margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 14px 16px; border: 2px solid #3a3228; border-radius: 10px;
+    font-size: 16px; font-family: inherit; background: #1a1612; color: #f5f0e8;
+    text-align: center; letter-spacing: 1px;
+  }
+  .field input:focus { border-color: #c8a96e; outline: none; }
+  .btn {
+    width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    background: linear-gradient(135deg, #c8a96e, #dfc08a); color: #1a1612;
+    box-shadow: 0 4px 15px rgba(200,169,110,0.25); transition: all 0.2s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(200,169,110,0.35); }
+  .error { color: #c45a5a; font-size: 13px; text-align: center; margin-top: 12px; display: none; }
+  .shop-link { text-align: center; margin-top: 20px; font-size: 13px; }
+  .shop-link a { color: #c8a96e; text-decoration: none; }
+  .shop-link a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo-area">
+    <img src="https://www.leisuresports.sg/image/cache/Final-Logo copy-800x340.jpg" alt="Leisure Sports" class="logo-img"
+         onerror="this.style.display='none'">
+    <div class="logo-text">LEISURE SPORTS</div>
+    <div class="logo-sub">Inventory System</div>
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter password" autofocus
+           onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <button class="btn" onclick="doLogin()">Sign In</button>
+  <div class="error" id="error-msg">Invalid password. Please try again.</div>
+  <div class="shop-link">
+    <a href="/shop">Browse pre-owned racquets →</a>
+  </div>
+</div>
+<script>
+// Check if already logged in
+if (localStorage.getItem("ls_auth_token")) {
+  window.location.href = "/";
+}
+
+async function doLogin() {
+  const pw = document.getElementById("password").value;
+  if (!pw) return;
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      localStorage.setItem("ls_auth_token", data.token);
+      window.location.href = "/";
+    } else {
+      document.getElementById("error-msg").style.display = "block";
+      document.getElementById("password").value = "";
+      document.getElementById("password").focus();
+    }
+  } catch (err) {
+    document.getElementById("error-msg").style.display = "block";
+  }
+}
+</script>
+</body>
+</html>

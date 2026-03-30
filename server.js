@@ -39,9 +39,43 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 // Middleware
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+
+// ─── Auth Configuration ───
+const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD || "LS2025!";
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Public routes — no auth needed
 app.use("/uploads", express.static(UPLOADS_DIR));
 app.use("/pdf", express.static(PDF_DIR));
+app.get("/shop", (req, res) => res.sendFile(path.join(__dirname, "public", "shop.html")));
+app.get("/shop.html", (req, res) => res.redirect("/shop"));
+app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+
+// Login API
+app.post("/api/login", (req, res) => {
+  const { password } = req.body;
+  if (password === LOGIN_PASSWORD) {
+    const token = Buffer.from("ls_auth_" + Date.now()).toString("base64");
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: "Invalid password" });
+  }
+});
+
+// Auth check for admin API routes
+function requireAuth(req, res, next) {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith("Bearer ") && auth.length > 20) {
+    return next();
+  }
+  res.status(401).json({ error: "Unauthorized" });
+}
+
+// Public API routes (no auth)
+// These are defined later: /api/public/*, /health, /api/racquets/:code/pdf, /api/racquets/:code/qr
+
+// Serve admin page (index.html) — the page itself handles auth via JS
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 // ─── Database Abstraction Layer ───
 // Supports both SQLite (local) and PostgreSQL (Railway)
@@ -205,7 +239,7 @@ async function generateInventoryCode() {
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 // Add racquet
-app.post("/api/racquets", upload.single("photo"), async (req, res) => {
+app.post("/api/racquets", requireAuth, upload.single("photo"), async (req, res) => {
   try {
     const b = req.body;
     const code = await generateInventoryCode();
@@ -250,7 +284,7 @@ app.post("/api/racquets", upload.single("photo"), async (req, res) => {
 });
 
 // Get all racquets
-app.get("/api/racquets", async (req, res) => {
+app.get("/api/racquets", requireAuth, async (req, res) => {
   try {
     const search = req.query.search || "";
     const status = req.query.status || "";
@@ -285,7 +319,7 @@ app.get("/api/racquets", async (req, res) => {
 });
 
 // Lookup by code
-app.get("/api/racquets/lookup/:code", async (req, res) => {
+app.get("/api/racquets/lookup/:code", requireAuth, async (req, res) => {
   try {
     const row = await db.get(
       "SELECT * FROM racquets WHERE inventory_code = ?",
@@ -302,7 +336,7 @@ app.get("/api/racquets/lookup/:code", async (req, res) => {
 });
 
 // Search by phone number
-app.get("/api/racquets/search-phone", async (req, res) => {
+app.get("/api/racquets/search-phone", requireAuth, async (req, res) => {
   try {
     const phone = (req.query.phone || "").replace(/\D/g, "");
     if (!phone || phone.length < 4) {
@@ -327,7 +361,7 @@ app.get("/api/racquets/search-phone", async (req, res) => {
 });
 
 // Update status
-app.patch("/api/racquets/:code/status", async (req, res) => {
+app.patch("/api/racquets/:code/status", requireAuth, async (req, res) => {
   try {
     const { status } = req.body;
     if (IS_RAILWAY) {
@@ -350,7 +384,7 @@ app.patch("/api/racquets/:code/status", async (req, res) => {
 });
 
 // Delete
-app.delete("/api/racquets/:code", async (req, res) => {
+app.delete("/api/racquets/:code", requireAuth, async (req, res) => {
   try {
     // Get photo path before deleting
     const item = await db.get(
@@ -380,7 +414,7 @@ app.delete("/api/racquets/:code", async (req, res) => {
 });
 
 // Password-protected admin delete
-app.post("/api/racquets/:code/admin-delete", async (req, res) => {
+app.post("/api/racquets/:code/admin-delete", requireAuth, async (req, res) => {
   try {
     const { password } = req.body;
     if (password !== DELETE_PASSWORD) {
@@ -538,7 +572,7 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "LS1978reset!";
 const DELETE_PASSWORD = process.env.DELETE_PASSWORD || "LSdelete!";
 
-app.post("/api/admin/reset", async (req, res) => {
+app.post("/api/admin/reset", requireAuth, async (req, res) => {
   try {
     const { confirm, password } = req.body;
     if (password !== ADMIN_PASSWORD) {
@@ -580,7 +614,7 @@ app.post("/api/admin/reset", async (req, res) => {
 });
 
 // ─── Stats ───
-app.get("/api/stats", async (req, res) => {
+app.get("/api/stats", requireAuth, async (req, res) => {
   try {
     const total = await db.get("SELECT COUNT(*) as count FROM racquets");
     const available = await db.get("SELECT COUNT(*) as count FROM racquets WHERE status='Available'");
@@ -643,11 +677,6 @@ app.get("/api/public/racquets/:code", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
-
-// Serve public storefront page
-app.get("/shop", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "shop.html"));
 });
 
 // ─── Helpers ───

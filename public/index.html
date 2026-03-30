@@ -125,6 +125,7 @@
     <button class="nav-btn active" onclick="showView('intake')" id="nav-intake">＋ Intake</button>
     <button class="nav-btn" onclick="showView('lookup')" id="nav-lookup">🔍 Lookup</button>
     <button class="nav-btn" onclick="showView('inventory')" id="nav-inventory">📦 Stock <span id="stock-count"></span></button>
+    <button class="nav-btn" onclick="logout()" style="font-size:12px;padding:9px 12px">🚪</button>
   </div>
 </div>
 
@@ -231,6 +232,24 @@
 </div>
 
 <script>
+// ─── Auth Check ───
+const AUTH_TOKEN = localStorage.getItem("ls_auth_token");
+if (!AUTH_TOKEN) { window.location.href = "/login"; }
+
+function authFetch(url, options = {}) {
+  options.headers = options.headers || {};
+  options.headers["Authorization"] = "Bearer " + AUTH_TOKEN;
+  return fetch(url, options).then(res => {
+    if (res.status === 401) { logout(); }
+    return res;
+  });
+}
+
+function logout() {
+  localStorage.removeItem("ls_auth_token");
+  window.location.href = "/login";
+}
+
 const BRANDS = {
   Babolat: ["Pure Drive 2025","Pure Drive 98 2025","Pure Drive 107","Pure Aero","Pure Aero 98","Pure Aero Rafa","Pure Strike 98 16x19","Pure Strike 98 18x20","Pure Strike 100 16x20","Evo Drive","Evo Aero","Boost Drive","Boost Aero"],
   Wilson: ["Blade 98 V9","Blade 98 18x20 V9","Blade 100 V9","Blade 104 V9","Pro Staff 97 V14","Shift 99","Shift 99 Pro","RF01","Clash 100","Ultra 100 V4","Burn 100"],
@@ -296,7 +315,7 @@ document.getElementById("intake-form").addEventListener("submit", async (e) => {
   if (!brandValue.value) { alert("Please enter a brand name."); return; }
   if (!modelValue.value) { alert("Please enter a model name."); return; }
   try {
-    const res = await fetch("/api/racquets", { method: "POST", body: new FormData(e.target) });
+    const res = await authFetch("/api/racquets", { method: "POST", body: new FormData(e.target) });
     const data = await res.json();
     if (data.success) {
       lastAddedRacquet = data.racquet;
@@ -320,7 +339,7 @@ function printTag(code) {
   if (!tagWindow) { alert("Please allow popups for this site."); return; }
   tagWindow.document.write('<html><head><title>Tag '+code+'</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5"><div style="text-align:center;font-family:Arial,sans-serif;color:#888">Loading tag...</div></body></html>');
 
-  fetch("/api/racquets/"+code+"/qr").then(r => r.json()).then(data => {
+  authFetch("/api/racquets/"+code+"/qr").then(r => r.json()).then(data => {
     tagWindow.document.open();
     tagWindow.document.write('<!DOCTYPE html><html><head><title>Tag '+code+'</title><style>'+
       '@page { size: 30mm 20mm; margin: 0; }'+
@@ -380,7 +399,7 @@ async function doPhoneSearch() {
   const phone = document.getElementById("lookup-phone").value.trim(); if (!phone) return;
   const errEl = document.getElementById("lookup-error"), resEl = document.getElementById("lookup-result");
   try {
-    const res = await fetch("/api/racquets/search-phone?phone="+encodeURIComponent(phone));
+    const res = await authFetch("/api/racquets/search-phone?phone="+encodeURIComponent(phone));
     if (!res.ok) { const d = await res.json(); errEl.textContent = d.error || "Search failed"; errEl.classList.remove("hidden"); resEl.classList.add("hidden"); return; }
     const items = await res.json();
     if (!items.length) { errEl.textContent = 'No racquets found for phone number "'+phone+'"'; errEl.classList.remove("hidden"); resEl.classList.add("hidden"); return; }
@@ -400,7 +419,7 @@ async function doLookup() {
   const code = document.getElementById("lookup-code").value.trim().toUpperCase(); if (!code) return;
   const errEl = document.getElementById("lookup-error"), resEl = document.getElementById("lookup-result");
   try {
-    const res = await fetch("/api/racquets/lookup/"+code);
+    const res = await authFetch("/api/racquets/lookup/"+code);
     if (!res.ok) { errEl.textContent = 'No racquet found with code "'+code+'"'; errEl.classList.remove("hidden"); resEl.classList.add("hidden"); return; }
     const r = await res.json(); errEl.classList.add("hidden"); resEl.classList.remove("hidden"); resEl.innerHTML = renderDetail(r);
   } catch (err) { errEl.textContent = "Search failed: "+err.message; errEl.classList.remove("hidden"); resEl.classList.add("hidden"); }
@@ -416,13 +435,13 @@ function renderDetail(r) {
 
 async function markSold(code) {
   if (!confirm("Mark this racquet as SOLD?")) return;
-  await fetch("/api/racquets/"+code+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Sold"})});
+  await authFetch("/api/racquets/"+code+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Sold"})});
   doLookup(); loadStats();
 }
 
 async function markAvailable(code) {
   if (!confirm("Change this racquet back to AVAILABLE?")) return;
-  await fetch("/api/racquets/"+code+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Available"})});
+  await authFetch("/api/racquets/"+code+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"Available"})});
   doLookup(); loadStats();
 }
 
@@ -430,7 +449,7 @@ async function returnToCustomer(code, r) {
   if (!confirm("Return this racquet to "+r.customer_name+"?\n\nThis will DELETE the racquet from inventory permanently.")) return;
   // Delete the racquet
   try {
-    const res = await fetch("/api/racquets/"+code, { method: "DELETE" });
+    const res = await authFetch("/api/racquets/"+code, { method: "DELETE" });
     const data = await res.json();
     if (data.success) {
       // Compose WhatsApp message
@@ -449,7 +468,7 @@ async function adminDelete(code) {
   const pw = prompt("Enter delete password to remove this record permanently:");
   if (!pw) return;
   try {
-    const res = await fetch("/api/racquets/"+code+"/admin-delete", {
+    const res = await authFetch("/api/racquets/"+code+"/admin-delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: pw })
@@ -469,7 +488,7 @@ async function adminDelete(code) {
 async function loadInventory() {
   const search = document.getElementById("inv-search")?.value||"", status = document.getElementById("inv-status-filter")?.value||"";
   const p = new URLSearchParams(); if (search) p.set("search",search); if (status) p.set("status",status);
-  const items = await (await fetch("/api/racquets?"+p)).json();
+  const items = await (await authFetch("/api/racquets?"+p)).json();
   const el = document.getElementById("inv-list");
   if (!items.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">'+(search||status?"No matches found.":"No racquets yet. Add your first one!")+'</div>'; return; }
   const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "";
@@ -479,7 +498,7 @@ async function viewItem(code) { document.getElementById("lookup-code").value = c
 
 async function loadStats() {
   try {
-    const s = await (await fetch("/api/stats")).json();
+    const s = await (await authFetch("/api/stats")).json();
     document.getElementById("stock-count").textContent = "("+s.total+")";
     document.getElementById("stats-bar").innerHTML = '<div class="stat-card"><div class="stat-num">'+s.total+'</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-num" style="color:var(--success)">'+s.available+'</div><div class="stat-label">Available</div></div><div class="stat-card"><div class="stat-num" style="color:var(--danger)">'+s.sold+'</div><div class="stat-label">Sold</div></div><div class="stat-card"><div class="stat-num" style="color:var(--accent)">S$'+Number(s.totalValue).toFixed(0)+'</div><div class="stat-label">Stock Value</div></div>';
   } catch(e){}
@@ -496,7 +515,7 @@ async function doReset() {
   const pw = document.getElementById("reset-password").value;
   if (!pw) { alert("Please enter the admin password."); return; }
   try {
-    const res = await fetch("/api/admin/reset", {
+    const res = await authFetch("/api/admin/reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ confirm: "DELETE_ALL_DATA", password: pw })
