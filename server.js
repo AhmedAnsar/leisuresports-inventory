@@ -352,9 +352,27 @@ app.patch("/api/racquets/:code/status", async (req, res) => {
 // Delete
 app.delete("/api/racquets/:code", async (req, res) => {
   try {
+    // Get photo path before deleting
+    const item = await db.get(
+      "SELECT photo_path FROM racquets WHERE inventory_code = ?",
+      [req.params.code]
+    );
+
+    // Delete from database
     await db.run("DELETE FROM racquets WHERE inventory_code = ?", [
       req.params.code,
     ]);
+
+    // Delete photo file if exists
+    if (item && item.photo_path) {
+      const absPhoto = IS_RAILWAY
+        ? path.join(RAILWAY_VOLUME, item.photo_path.replace(/^\//, ""))
+        : path.join(__dirname, item.photo_path);
+      if (fs.existsSync(absPhoto)) {
+        try { fs.unlinkSync(absPhoto); } catch (e) {}
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
