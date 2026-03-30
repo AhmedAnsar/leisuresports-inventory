@@ -412,6 +412,25 @@ app.post("/api/racquets/:code/admin-delete", async (req, res) => {
   }
 });
 
+// ─── QR Code for tag printing ───
+app.get("/api/racquets/:code/qr", async (req, res) => {
+  try {
+    const code = req.params.code.toUpperCase();
+    const shopBaseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : (process.env.RAILWAY_STATIC_URL || `http://localhost:${PORT}`);
+    const qrUrl = `${shopBaseUrl}/shop?code=${code}`;
+    const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 300,
+      margin: 1,
+      errorCorrectionLevel: "M",
+    });
+    res.json({ qr: qrDataUrl, code: code, url: qrUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── PDF Generation ───
 app.get("/api/racquets/:code/pdf", async (req, res) => {
   try {

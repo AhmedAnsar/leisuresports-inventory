@@ -168,6 +168,7 @@
       <div style="font-size:13px;color:var(--text2)">Stick this code on the racquet label</div>
       <div class="btn-group">
         <button class="btn btn-primary btn-sm" onclick="downloadPDF()">📄 Download PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="printTagSuccess()">🏷️ Print Tag</button>
         <button class="btn btn-whatsapp btn-sm" onclick="sendWhatsApp()">💬 WhatsApp</button>
         <button class="btn btn-secondary btn-sm" onclick="addAnother()">＋ Add Another</button>
       </div>
@@ -311,7 +312,46 @@ document.getElementById("intake-form").addEventListener("submit", async (e) => {
 function addAnother() { document.getElementById("intake-form").classList.remove("hidden"); document.getElementById("success-view").classList.add("hidden"); lastAddedRacquet = null; }
 
 function downloadPDF() { if (lastAddedRacquet) window.open("/api/racquets/"+lastAddedRacquet.inventory_code+"/pdf","_blank"); }
+function printTagSuccess() { if (lastAddedRacquet) printTag(lastAddedRacquet.inventory_code); }
 function downloadPDFForCode(code) { window.open("/api/racquets/"+code+"/pdf","_blank"); }
+
+function printTag(code) {
+  const tagWindow = window.open("", "_blank", "width=400,height=300");
+  if (!tagWindow) { alert("Please allow popups for this site."); return; }
+  tagWindow.document.write('<html><head><title>Tag '+code+'</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5"><div style="text-align:center;font-family:Arial,sans-serif;color:#888">Loading tag...</div></body></html>');
+
+  fetch("/api/racquets/"+code+"/qr").then(r => r.json()).then(data => {
+    tagWindow.document.open();
+    tagWindow.document.write('<!DOCTYPE html><html><head><title>Tag '+code+'</title><style>'+
+      '@page { size: 62mm 29mm; margin: 0; }'+
+      '@media print { body { margin: 0; padding: 0; } .no-print { display: none !important; } }'+
+      'body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }'+
+      '.tag { width: 62mm; height: 29mm; display: flex; align-items: center; justify-content: center; gap: 2mm; padding: 1.5mm 2mm; box-sizing: border-box; }'+
+      '.qr { flex-shrink: 0; }'+
+      '.qr img { width: 22mm; height: 22mm; }'+
+      '.info { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; }'+
+      '.code { font-size: 11pt; font-weight: 700; letter-spacing: 0.5px; color: #000; }'+
+      '.brand { font-size: 6pt; color: #555; margin-top: 1mm; letter-spacing: 0.3px; }'+
+      '.scan { font-size: 5pt; color: #999; margin-top: 1.5mm; }'+
+    '</style></head><body>'+
+      '<div class="tag">'+
+        '<div class="qr"><img src="'+data.qr+'" alt="QR"></div>'+
+        '<div class="info">'+
+          '<div class="code">'+code+'</div>'+
+          '<div class="brand">LEISURE SPORTS</div>'+
+          '<div class="scan">Scan to view</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="no-print" style="text-align:center;padding:16px;font-family:Arial,sans-serif">'+
+        '<button onclick="window.print()" style="padding:10px 24px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Print Tag</button>'+
+        '<div style="margin-top:8px;font-size:12px;color:#999">Set printer to 62mm × 29mm label size</div>'+
+      '</div>'+
+    '</body></html>');
+    tagWindow.document.close();
+  }).catch(err => {
+    tagWindow.document.body.innerHTML = '<div style="text-align:center;padding:20px;color:red">Failed to load QR code</div>';
+  });
+}
 
 function sendWhatsApp() { if (lastAddedRacquet) sendWhatsAppFor(lastAddedRacquet); }
 function sendWhatsAppFor(r) {
@@ -370,7 +410,7 @@ function renderDetail(r) {
   const photo = r.photo_path ? '<img src="'+r.photo_path+'" class="detail-photo" alt="Racquet">' : '';
   const fd = (d) => d ? new Date(d).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
   const dc = (l,v) => '<div class="detail-cell"><div class="detail-label">'+l+'</div><div class="detail-value">'+v+'</div></div>';
-  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">'+(r.status==="Sold"?"💬 Notify Sold":"💬 WhatsApp")+'</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="markAvailable(\''+r.inventory_code+'\')">Mark as Available</button>')+'</div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:12px" onclick="returnToCustomer(\''+r.inventory_code+'\','+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">🔙 Return Racquet to Customer</button><button class="btn btn-sm" style="background:var(--surface2);color:var(--danger);border:1px solid var(--border);font-size:12px" onclick="adminDelete(\''+r.inventory_code+'\')">🗑️ Delete Record</button></div></div>';
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="downloadPDFForCode(\''+r.inventory_code+'\')">📄 PDF</button><button class="btn btn-secondary btn-sm" onclick="printTag(\''+r.inventory_code+'\')">🏷️ Print Tag</button><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">'+(r.status==="Sold"?"💬 Notify Sold":"💬 WhatsApp")+'</button>'+(r.status==="Available"?'<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>':'<button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="markAvailable(\''+r.inventory_code+'\')">Mark as Available</button>')+'</div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:12px" onclick="returnToCustomer(\''+r.inventory_code+'\','+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">🔙 Return Racquet to Customer</button><button class="btn btn-sm" style="background:var(--surface2);color:var(--danger);border:1px solid var(--border);font-size:12px" onclick="adminDelete(\''+r.inventory_code+'\')">🗑️ Delete Record</button></div></div>';
 }
 
 async function markSold(code) {
