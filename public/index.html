@@ -323,28 +323,27 @@ function printTag(code) {
   fetch("/api/racquets/"+code+"/qr").then(r => r.json()).then(data => {
     tagWindow.document.open();
     tagWindow.document.write('<!DOCTYPE html><html><head><title>Tag '+code+'</title><style>'+
-      '@page { size: 62mm 29mm; margin: 0; }'+
+      '@page { size: 30mm 20mm; margin: 0; }'+
       '@media print { body { margin: 0; padding: 0; } .no-print { display: none !important; } }'+
       'body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }'+
-      '.tag { width: 62mm; height: 29mm; display: flex; align-items: center; justify-content: center; gap: 2mm; padding: 1.5mm 2mm; box-sizing: border-box; }'+
+      '.tag { width: 30mm; height: 20mm; display: flex; align-items: center; gap: 1mm; padding: 1mm; box-sizing: border-box; }'+
       '.qr { flex-shrink: 0; }'+
-      '.qr img { width: 22mm; height: 22mm; }'+
-      '.info { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; }'+
-      '.code { font-size: 11pt; font-weight: 700; letter-spacing: 0.5px; color: #000; }'+
-      '.brand { font-size: 6pt; color: #555; margin-top: 1mm; letter-spacing: 0.3px; }'+
-      '.scan { font-size: 5pt; color: #999; margin-top: 1.5mm; }'+
+      '.qr img { width: 16mm; height: 16mm; }'+
+      '.info { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; overflow: hidden; }'+
+      '.code { font-size: 6pt; font-weight: 700; letter-spacing: 0.3px; color: #000; line-height: 1.1; }'+
+      '.brand { font-size: 3.5pt; color: #666; margin-top: 0.5mm; letter-spacing: 0.2px; }'+
     '</style></head><body>'+
       '<div class="tag">'+
         '<div class="qr"><img src="'+data.qr+'" alt="QR"></div>'+
         '<div class="info">'+
           '<div class="code">'+code+'</div>'+
-          '<div class="brand">LEISURE SPORTS</div>'+
-          '<div class="scan">Scan to view</div>'+
+          '<div class="brand">LEISURE<br>SPORTS</div>'+
         '</div>'+
       '</div>'+
       '<div class="no-print" style="text-align:center;padding:16px;font-family:Arial,sans-serif">'+
-        '<button onclick="window.print()" style="padding:10px 24px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Print Tag</button>'+
-        '<div style="margin-top:8px;font-size:12px;color:#999">Set printer to 62mm × 29mm label size</div>'+
+        '<div style="margin-bottom:12px;padding:12px;background:#f8f4ee;border-radius:8px;display:inline-block"><div style="font-size:11px;color:#999;margin-bottom:4px">Actual size preview (30mm × 20mm)</div></div>'+
+        '<div><button onclick="window.print()" style="padding:10px 24px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Print Tag</button></div>'+
+        '<div style="margin-top:8px;font-size:12px;color:#999">Set printer to 30mm × 20mm label</div>'+
       '</div>'+
     '</body></html>');
     tagWindow.document.close();
