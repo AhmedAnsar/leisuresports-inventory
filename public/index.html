@@ -214,7 +214,8 @@
       </div>
     </div>
     <div id="inv-list"></div>
-    <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border)">
+    <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);font-size:12px;padding:8px 14px" onclick="downloadBackup()">📥 Download Backup</button>
       <button class="btn btn-sm" style="background:var(--surface2);color:var(--danger);border:1px solid var(--border);font-size:12px;padding:8px 14px" onclick="showResetConfirm()">⚠️ Reset All Data</button>
     </div>
     <div id="reset-confirm" class="hidden" style="margin-top:12px">
@@ -504,6 +505,20 @@ async function loadStats() {
   } catch(e){}
 }
 loadStats();
+
+function downloadBackup() {
+  authFetch("/api/admin/backup").then(res => {
+    if (!res.ok) { alert("Backup failed"); return; }
+    return res.blob().then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "leisuresports-backup-"+new Date().toISOString().slice(0,10)+".json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }).catch(err => alert("Backup failed: "+err.message));
+}
 
 function showResetConfirm() {
   document.getElementById("reset-confirm").classList.remove("hidden");

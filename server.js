@@ -47,9 +47,15 @@ const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 // Public routes — no auth needed
 app.use("/uploads", express.static(UPLOADS_DIR));
 app.use("/pdf", express.static(PDF_DIR));
-app.get("/shop", (req, res) => res.sendFile(path.join(__dirname, "public", "shop.html")));
+app.get("/shop", (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.sendFile(path.join(__dirname, "public", "shop.html"));
+});
 app.get("/shop.html", (req, res) => res.redirect("/shop"));
-app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/login", (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
 
 // Login API
 app.post("/api/login", (req, res) => {
@@ -75,7 +81,10 @@ function requireAuth(req, res, next) {
 // These are defined later: /api/public/*, /health, /api/racquets/:code/pdf, /api/racquets/:code/qr
 
 // Serve admin page (index.html) — the page itself handles auth via JS
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/", (req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 // ─── Database Abstraction Layer ───
 // Supports both SQLite (local) and PostgreSQL (Railway)
