@@ -632,6 +632,25 @@ app.get("/api/stats", requireAuth, async (req, res) => {
   }
 });
 
+// ─── Database Backup Download ───
+app.get("/api/admin/backup", requireAuth, async (req, res) => {
+  try {
+    const rows = await db.all("SELECT * FROM racquets ORDER BY id ASC");
+    const backup = {
+      export_date: new Date().toISOString(),
+      app: "Leisure Sports Inventory",
+      total_records: rows.length,
+      racquets: rows,
+    };
+    const filename = `leisuresports-backup-${new Date().toISOString().slice(0,10)}.json`;
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(JSON.stringify(backup, null, 2));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Public Storefront API (no customer details) ───
 app.get("/api/public/racquets", async (req, res) => {
   try {
