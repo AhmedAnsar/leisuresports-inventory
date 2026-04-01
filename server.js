@@ -392,6 +392,40 @@ app.patch("/api/racquets/:code/status", requireAuth, async (req, res) => {
   }
 });
 
+// Update photo
+app.post("/api/racquets/:code/photo", requireAuth, upload.single("photo"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No photo uploaded" });
+
+    const code = req.params.code.toUpperCase();
+
+    // Delete old photo if exists
+    const item = await db.get(
+      "SELECT photo_path FROM racquets WHERE inventory_code = ?",
+      [code]
+    );
+    if (item && item.photo_path) {
+      const oldPhoto = IS_RAILWAY
+        ? path.join(RAILWAY_VOLUME, item.photo_path.replace(/^\//, ""))
+        : path.join(__dirname, item.photo_path);
+      if (fs.existsSync(oldPhoto)) {
+        try { fs.unlinkSync(oldPhoto); } catch (e) {}
+      }
+    }
+
+    // Update with new photo
+    const newPath = `/uploads/${req.file.filename}`;
+    await db.run(
+      "UPDATE racquets SET photo_path = ? WHERE inventory_code = ?",
+      [newPath, code]
+    );
+
+    res.json({ success: true, photo_path: newPath });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete
 app.delete("/api/racquets/:code", requireAuth, async (req, res) => {
   try {
