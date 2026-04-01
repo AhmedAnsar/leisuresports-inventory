@@ -344,27 +344,21 @@ function printTag(code) {
   authFetch("/api/racquets/"+code+"/qr").then(r => r.json()).then(data => {
     tagWindow.document.open();
     tagWindow.document.write('<!DOCTYPE html><html><head><title>Tag '+code+'</title><style>'+
-      '@page { size: 30mm 20mm; margin: 0; }'+
+      '@page { size: 20mm 20mm; margin: 0; }'+
       '@media print { body { margin: 0; padding: 0; } .no-print { display: none !important; } }'+
       'body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }'+
-      '.tag { width: 30mm; height: 20mm; display: flex; align-items: center; gap: 1mm; padding: 1mm; box-sizing: border-box; }'+
-      '.qr { flex-shrink: 0; }'+
-      '.qr img { width: 16mm; height: 16mm; }'+
-      '.info { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; text-align: center; overflow: hidden; }'+
-      '.code { font-size: 6pt; font-weight: 700; letter-spacing: 0.3px; color: #000; line-height: 1.1; }'+
-      '.brand { font-size: 3.5pt; color: #666; margin-top: 0.5mm; letter-spacing: 0.2px; }'+
+      '.tag { width: 20mm; height: 20mm; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.5mm; box-sizing: border-box; }'+
+      '.qr img { width: 15mm; height: 15mm; }'+
+      '.code { font-size: 5pt; font-weight: 700; letter-spacing: 0.3px; color: #000; margin-top: 0.3mm; }'+
     '</style></head><body>'+
       '<div class="tag">'+
         '<div class="qr"><img src="'+data.qr+'" alt="QR"></div>'+
-        '<div class="info">'+
-          '<div class="code">'+code+'</div>'+
-          '<div class="brand">LEISURE<br>SPORTS</div>'+
-        '</div>'+
+        '<div class="code">'+code+'</div>'+
       '</div>'+
       '<div class="no-print" style="text-align:center;padding:16px;font-family:Arial,sans-serif">'+
-        '<div style="margin-bottom:12px;padding:12px;background:#f8f4ee;border-radius:8px;display:inline-block"><div style="font-size:11px;color:#999;margin-bottom:4px">Actual size preview (30mm × 20mm)</div></div>'+
+        '<div style="margin-bottom:12px;padding:12px;background:#f8f4ee;border-radius:8px;display:inline-block"><div style="font-size:11px;color:#999">Actual size: 20mm × 20mm</div></div>'+
         '<div><button onclick="window.print()" style="padding:10px 24px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Print Tag</button></div>'+
-        '<div style="margin-top:8px;font-size:12px;color:#999">Set printer to 30mm × 20mm label</div>'+
+        '<div style="margin-top:8px;font-size:12px;color:#999">Set printer to 20mm × 20mm label</div>'+
       '</div>'+
     '</body></html>');
     tagWindow.document.close();
