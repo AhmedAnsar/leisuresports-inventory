@@ -216,6 +216,7 @@
     <div id="inv-list"></div>
     <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-sm" style="background:var(--surface2);color:var(--accent);border:1px solid var(--border);font-size:12px;padding:8px 14px" onclick="downloadBackup()">📥 Download Backup</button>
+      <button class="btn btn-sm" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-size:12px;padding:8px 14px" onclick="checkStorage()">💾 Check Storage</button>
       <button class="btn btn-sm" style="background:var(--surface2);color:var(--danger);border:1px solid var(--border);font-size:12px;padding:8px 14px" onclick="showResetConfirm()">⚠️ Reset All Data</button>
     </div>
     <div id="reset-confirm" class="hidden" style="margin-top:12px">
@@ -523,6 +524,22 @@ async function loadStats() {
   } catch(e){}
 }
 loadStats();
+
+function checkStorage() {
+  authFetch("/api/admin/storage").then(r => r.json()).then(data => {
+    let msg = "📁 Storage Info\n\n";
+    msg += "Mode: " + (data.is_railway ? "☁️ Railway" : "💻 Local") + "\n";
+    msg += "Upload path: " + data.uploads_dir + "\n";
+    msg += "Volume: " + data.volume_path + "\n\n";
+    msg += "📷 Photos: " + (data.total_files || 0) + " files\n";
+    msg += "💾 Total size: " + (data.total_size_mb || 0) + " MB\n";
+    if (data.uploads && data.uploads.length > 0) {
+      msg += "\nFiles:\n";
+      data.uploads.forEach(f => { msg += "  • " + f.name + " (" + f.size_kb + " KB)\n"; });
+    }
+    alert(msg);
+  }).catch(err => alert("Failed: " + err.message));
+}
 
 function downloadBackup() {
   authFetch("/api/admin/backup").then(res => {
