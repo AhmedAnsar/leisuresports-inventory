@@ -694,6 +694,40 @@ app.get("/api/admin/backup", requireAuth, async (req, res) => {
   }
 });
 
+// ─── Storage Info (check volume) ───
+app.get("/api/admin/storage", requireAuth, async (req, res) => {
+  try {
+    const info = {
+      is_railway: IS_RAILWAY,
+      uploads_dir: UPLOADS_DIR,
+      volume_path: IS_RAILWAY ? RAILWAY_VOLUME : "N/A (local mode)",
+      uploads: [],
+    };
+
+    if (fs.existsSync(UPLOADS_DIR)) {
+      const files = fs.readdirSync(UPLOADS_DIR);
+      info.uploads = files.map((f) => {
+        const stat = fs.statSync(path.join(UPLOADS_DIR, f));
+        return {
+          name: f,
+          size_kb: Math.round(stat.size / 1024),
+          created: stat.birthtime,
+        };
+      });
+      info.total_files = files.length;
+      info.total_size_mb = (
+        info.uploads.reduce((sum, f) => sum + f.size_kb, 0) / 1024
+      ).toFixed(2);
+    } else {
+      info.uploads_dir_exists = false;
+    }
+
+    res.json(info);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Public Storefront API (no customer details) ───
 app.get("/api/public/racquets", async (req, res) => {
   try {
