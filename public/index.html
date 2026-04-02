@@ -345,21 +345,21 @@ function printTag(code) {
   authFetch("/api/racquets/"+code+"/qr").then(r => r.json()).then(data => {
     tagWindow.document.open();
     tagWindow.document.write('<!DOCTYPE html><html><head><title>Tag '+code+'</title><style>'+
-      '@page { size: 20mm 20mm; margin: 0; }'+
+      '@page { size: 20mm 10mm; margin: 0; }'+
       '@media print { body { margin: 0; padding: 0; } .no-print { display: none !important; } }'+
       'body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }'+
-      '.tag { width: 20mm; height: 20mm; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.5mm; box-sizing: border-box; }'+
-      '.qr img { width: 15mm; height: 15mm; }'+
-      '.code { font-size: 5pt; font-weight: 700; letter-spacing: 0.3px; color: #000; margin-top: 0.3mm; }'+
+      '.tag { width: 20mm; height: 10mm; display: flex; align-items: center; gap: 0.5mm; padding: 0.5mm; box-sizing: border-box; }'+
+      '.qr img { width: 9mm; height: 9mm; }'+
+      '.code { font-size: 4.5pt; font-weight: 700; color: #000; line-height: 1.2; text-align: center; flex: 1; }'+
     '</style></head><body>'+
       '<div class="tag">'+
         '<div class="qr"><img src="'+data.qr+'" alt="QR"></div>'+
         '<div class="code">'+code+'</div>'+
       '</div>'+
       '<div class="no-print" style="text-align:center;padding:16px;font-family:Arial,sans-serif">'+
-        '<div style="margin-bottom:12px;padding:12px;background:#f8f4ee;border-radius:8px;display:inline-block"><div style="font-size:11px;color:#999">Actual size: 20mm × 20mm</div></div>'+
+        '<div style="margin-bottom:12px;padding:12px;background:#f8f4ee;border-radius:8px;display:inline-block"><div style="font-size:11px;color:#999">Actual size: 20mm × 10mm</div></div>'+
         '<div><button onclick="window.print()" style="padding:10px 24px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Print Tag</button></div>'+
-        '<div style="margin-top:8px;font-size:12px;color:#999">Set printer to 20mm × 20mm label</div>'+
+        '<div style="margin-top:8px;font-size:12px;color:#999">Share to Niimbot app to print</div>'+
       '</div>'+
     '</body></html>');
     tagWindow.document.close();
