@@ -404,18 +404,18 @@ function printTag(code, price) {
     btnRow.appendChild(shareBtn);
   }
 
-  // Save button (fallback)
+  // Save to Photos button - opens image in new tab for long-press save to gallery
   const saveBtn = document.createElement("button");
-  saveBtn.className = "btn btn-secondary btn-sm";
-  saveBtn.innerHTML = "💾 Save Image";
+  saveBtn.className = "btn btn-primary btn-sm";
+  saveBtn.innerHTML = "💾 Save to Photos";
   saveBtn.style.cssText = "flex:1;justify-content:center";
   saveBtn.onclick = function() {
-    canvas.toBlob(function(blob) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "tag-"+code+".png"; a.click();
-      URL.revokeObjectURL(url);
-    }, "image/png");
+    const dataUrl = canvas.toDataURL("image/png");
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write('<!DOCTYPE html><html><head><title>Tag '+code+'</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:Arial,sans-serif;color:#fff;padding:16px}img{max-width:100%;border-radius:8px;margin-bottom:16px;background:#fff}p{font-size:14px;color:#aaa;text-align:center;line-height:1.6}</style></head><body><img src="'+dataUrl+'" alt="Tag '+code+'"><p><strong>Long-press the image above</strong><br>then tap "Save image" or "Download image"<br>to save it to your photo gallery.<br><br>Then open Niimbot app → + → Photo Album → select this image</p></body></html>');
+      w.document.close();
+    }
   };
   btnRow.appendChild(saveBtn);
 
