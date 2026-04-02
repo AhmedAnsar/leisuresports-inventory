@@ -511,23 +511,76 @@ app.get("/api/racquets/:code/qr", async (req, res) => {
 // ─── Tag PNG Image ───
 app.get("/api/racquets/:code/tag.png", async (req, res) => {
   try {
+    const sharp = require("sharp");
     const code = req.params.code.toUpperCase();
+
+    // Get price from database
+    const item = await db.get(
+      "SELECT expected_price FROM racquets WHERE inventory_code = ?",
+      [code]
+    );
+    const price = item ? "S$" + Number(item.expected_price).toFixed(0) : "";
+
     const shopBaseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : (process.env.RAILWAY_STATIC_URL || `http://localhost:${PORT}`);
     const qrUrl = `${shopBaseUrl}/shop?code=${code}`;
 
-    // Generate high-res QR as PNG — just the QR code, nothing else
+    // Generate high-res QR as PNG buffer
     const qrPng = await QRCode.toBuffer(qrUrl, {
-      width: 1000,
+      width: 800,
       margin: 1,
       errorCorrectionLevel: "M",
       color: { dark: "#000000", light: "#ffffff" },
     });
 
+    // Layout: code on left (rotated) | QR center | price on right (rotated)
+    // Render text as SVG with inline style to avoid font issues
+    const qrSize = 800;
+    const sideW = 300;
+    const canvasW = sideW + qrSize + sideW;
+    const canvasH = qrSize;
+
+    // Draw each character individually as positioned SVG text
+    // This avoids font rendering issues on servers
+    function charSvgColumn(text, w, h, charSize) {
+      const chars = text.split("");
+      const totalTextH = chars.length * charSize * 1.1;
+      const startY = (h - totalTextH) / 2 + charSize;
+      let svgChars = "";
+      chars.forEach((c, i) => {
+        const y = startY + i * charSize * 1.1;
+        svgChars += `<text x="${w/2}" y="${y}" font-size="${charSize}" font-weight="bold" fill="black" text-anchor="middle" dominant-baseline="middle" style="font-family:monospace,Courier">${c === "$" ? "&#36;" : c}</text>`;
+      });
+      return Buffer.from(`<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="white"/>${svgChars}</svg>`);
+    }
+
+    // Create vertical text columns
+    const codeSvg = charSvgColumn(code, sideW, canvasH, 60);
+    const priceSvg = charSvgColumn(price, sideW, canvasH, 72);
+
+    // Convert SVGs to PNG first (forces rasterization)
+    const codePng = await sharp(codeSvg).png().toBuffer();
+    const pricePng = await sharp(priceSvg).png().toBuffer();
+
+    // Resize QR
+    const qrResized = await sharp(qrPng).resize(qrSize, qrSize).toBuffer();
+
+    // Compose everything
+    const tag = await sharp({
+      create: { width: canvasW, height: canvasH, channels: 3, background: { r: 255, g: 255, b: 255 } }
+    })
+      .composite([
+        { input: codePng, top: 0, left: 0 },
+        { input: qrResized, top: 0, left: sideW },
+        { input: pricePng, top: 0, left: sideW + qrSize },
+      ])
+      .png()
+      .toBuffer();
+
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Content-Disposition", `attachment; filename="tag-${code}.png"`);
-    res.send(qrPng);
+    res.send(tag);
   } catch (err) {
     console.error("Tag error:", err);
     res.status(500).json({ error: "Tag generation failed: " + err.message });
