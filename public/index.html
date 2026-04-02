@@ -453,15 +453,15 @@ async function printNiimDirect(code, price) {
     // Connect to printer if not already connected
     if (!niimClient || !niimClient.isConnected) {
       niimClient = new niimbluelib.NiimbotBluetoothClient();
-      niimClient.addEventListener("disconnect", () => { niimClient = null; });
+      niimClient.on("disconnect", () => { niimClient = null; });
       await niimClient.connect();
     }
 
-    // Fetch printer info to get correct dimensions
-    const printerInfo = await niimClient.fetchPrinterInfo();
+    // Fetch printer info
+    await niimClient.fetchPrinterInfo();
     const modelMeta = niimClient.getModelMetadata();
 
-    // Label dimensions (in printer pixels)
+    // Label dimensions
     const labelWidth = modelMeta ? modelMeta.printheadPixels : 240;
     const labelHeight = Math.round(labelWidth * (canvas.height / canvas.width));
 
@@ -474,11 +474,8 @@ async function printNiimDirect(code, price) {
     pCtx.fillRect(0, 0, labelWidth, labelHeight);
     pCtx.drawImage(canvas, 0, 0, labelWidth, labelHeight);
 
-    // Get image data and encode
-    const imgData = pCtx.getImageData(0, 0, labelWidth, labelHeight);
+    // Encode and print
     const encoded = niimbluelib.ImageEncoder.encodeCanvas(printCanvas, "left");
-
-    // Print
     const printTaskType = niimClient.getPrintTaskType() || "v3";
     const printTask = niimbluelib.PrintTaskFactory.create(printTaskType, niimClient);
 
@@ -489,7 +486,7 @@ async function printNiimDirect(code, price) {
     alert("✓ Tag printed successfully!");
   } catch (err) {
     if (err.message && err.message.includes("cancelled")) {
-      // User cancelled bluetooth picker — do nothing
+      // User cancelled bluetooth picker
     } else {
       console.error("NiiM print error:", err);
       alert("Print failed: " + (err.message || err) + "\n\nTry using 🏷️ Print Tag instead.");
@@ -710,6 +707,6 @@ async function doReset() {
   } catch (err) { alert("Error: " + err.message); }
 }
 </script>
-<script src="https://unpkg.com/@mmote/niimbluelib@0.0.1-alpha.38/dist/umd/niimbluelib.min.js" async></script>
+<script src="https://unpkg.com/@mmote/niimbluelib@0.0.1-alpha.24/dist/umd/niimbluelib.min.js" async></script>
 </body>
 </html>
