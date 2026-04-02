@@ -513,33 +513,68 @@ app.get("/api/racquets/:code/tag.png", async (req, res) => {
   try {
     const sharp = require("sharp");
     const code = req.params.code.toUpperCase();
+
+    // Get price from database
+    const item = await db.get(
+      "SELECT expected_price FROM racquets WHERE inventory_code = ?",
+      [code]
+    );
+    const price = item ? "S$" + Number(item.expected_price).toFixed(0) : "";
+
     const shopBaseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : (process.env.RAILWAY_STATIC_URL || `http://localhost:${PORT}`);
     const qrUrl = `${shopBaseUrl}/shop?code=${code}`;
 
     // Generate high-res QR as PNG buffer
+    const qrSize = 800;
     const qrPng = await QRCode.toBuffer(qrUrl, {
-      width: 800,
+      width: qrSize,
       margin: 1,
       errorCorrectionLevel: "M",
       color: { dark: "#000000", light: "#ffffff" },
     });
 
-    // Create text label as SVG overlay
-    const fontSize = 64;
-    const textSvg = `<svg width="800" height="100">
-      <rect width="800" height="100" fill="white"/>
-      <text x="400" y="70" font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="bold" fill="black" text-anchor="middle" letter-spacing="2">${code}</text>
-    </svg>`;
+    // Layout: 2:1 ratio (matching 2cm x 1cm label)
+    // Total canvas: 1600 x 800
+    // Left strip (400px): inventory code rotated 90°
+    // Center (800px): QR code
+    // Right strip (400px): price rotated 270°
+    const canvasW = 1600;
+    const canvasH = 800;
+    const sideW = 400;
 
-    // Compose: QR on top, code text below
+    // Create rotated inventory code (rendered tall, then rotated)
+    const codeSvg = `<svg width="${canvasH}" height="${sideW}">
+      <rect width="${canvasH}" height="${sideW}" fill="white"/>
+      <text x="${canvasH / 2}" y="${sideW / 2 + 22}" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="bold" fill="black" text-anchor="middle">${code}</text>
+    </svg>`;
+    const codeRotated = await sharp(Buffer.from(codeSvg))
+      .rotate(90)
+      .toBuffer();
+
+    // Create rotated price (rendered tall, then rotated opposite)
+    const priceSvg = `<svg width="${canvasH}" height="${sideW}">
+      <rect width="${canvasH}" height="${sideW}" fill="white"/>
+      <text x="${canvasH / 2}" y="${sideW / 2 + 28}" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="bold" fill="black" text-anchor="middle">${price}</text>
+    </svg>`;
+    const priceRotated = await sharp(Buffer.from(priceSvg))
+      .rotate(270)
+      .toBuffer();
+
+    // Resize QR to fit center
+    const qrResized = await sharp(qrPng)
+      .resize(canvasH, canvasH)
+      .toBuffer();
+
+    // Compose everything
     const tag = await sharp({
-      create: { width: 800, height: 900, channels: 3, background: { r: 255, g: 255, b: 255 } }
+      create: { width: canvasW, height: canvasH, channels: 3, background: { r: 255, g: 255, b: 255 } }
     })
       .composite([
-        { input: qrPng, top: 0, left: 0 },
-        { input: Buffer.from(textSvg), top: 800, left: 0 },
+        { input: codeRotated, top: 0, left: 0 },
+        { input: qrResized, top: 0, left: sideW },
+        { input: priceRotated, top: 0, left: sideW + canvasH },
       ])
       .png()
       .toBuffer();
