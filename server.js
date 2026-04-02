@@ -534,62 +534,46 @@ app.get("/api/racquets/:code/tag.png", async (req, res) => {
       color: { dark: "#000000", light: "#ffffff" },
     });
 
-    // Use PDFKit to render text (has built-in Helvetica font that works on all servers)
-    function renderTextToPng(text, width, height, fontSize) {
-      return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ size: [width, height], margin: 0 });
-        const chunks = [];
-        doc.on("data", (c) => chunks.push(c));
-        doc.on("end", async () => {
-          try {
-            // Convert PDF to PNG via sharp
-            const pdfBuf = Buffer.concat(chunks);
-            const png = await sharp(pdfBuf, { density: 300 }).png().toBuffer();
-            resolve(png);
-          } catch (e) { reject(e); }
-        });
-        doc.rect(0, 0, width, height).fill("#ffffff");
-        doc.fill("#000000").font("Helvetica-Bold").fontSize(fontSize);
-        const textW = doc.widthOfString(text);
-        const textH = doc.currentLineHeight();
-        doc.text(text, (width - textW) / 2, (height - textH) / 2, { lineBreak: false });
-        doc.end();
-      });
-    }
-
-    // Render code text and price text as PNGs
-    const codeImg = await renderTextToPng(code, 800, 400, 72);
-    const priceImg = await renderTextToPng(price, 800, 400, 96);
-
-    // Rotate code 90° (reads bottom to top on left side)
-    const codeRotated = await sharp(codeImg).rotate(90).toBuffer();
-    const codeInfo = await sharp(codeRotated).metadata();
-
-    // Rotate price 270° (reads top to bottom on right side)
-    const priceRotated = await sharp(priceImg).rotate(270).toBuffer();
-    const priceInfo = await sharp(priceRotated).metadata();
-
-    // Layout: code | QR | price
+    // Layout: code on left (rotated) | QR center | price on right (rotated)
+    // Render text as SVG with inline style to avoid font issues
     const qrSize = 800;
-    const sideW = Math.max(codeInfo.width, priceInfo.width, 300);
+    const sideW = 300;
     const canvasW = sideW + qrSize + sideW;
     const canvasH = qrSize;
 
+    // Draw each character individually as positioned SVG text
+    // This avoids font rendering issues on servers
+    function charSvgColumn(text, w, h, charSize) {
+      const chars = text.split("");
+      const totalTextH = chars.length * charSize * 1.1;
+      const startY = (h - totalTextH) / 2 + charSize;
+      let svgChars = "";
+      chars.forEach((c, i) => {
+        const y = startY + i * charSize * 1.1;
+        svgChars += `<text x="${w/2}" y="${y}" font-size="${charSize}" font-weight="bold" fill="black" text-anchor="middle" dominant-baseline="middle" style="font-family:monospace,Courier">${c === "$" ? "&#36;" : c}</text>`;
+      });
+      return Buffer.from(`<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="white"/>${svgChars}</svg>`);
+    }
+
+    // Create vertical text columns
+    const codeSvg = charSvgColumn(code, sideW, canvasH, 60);
+    const priceSvg = charSvgColumn(price, sideW, canvasH, 72);
+
+    // Convert SVGs to PNG first (forces rasterization)
+    const codePng = await sharp(codeSvg).png().toBuffer();
+    const pricePng = await sharp(priceSvg).png().toBuffer();
+
     // Resize QR
     const qrResized = await sharp(qrPng).resize(qrSize, qrSize).toBuffer();
-
-    // Resize side panels to match canvas height
-    const codeFinal = await sharp(codeRotated).resize(sideW, canvasH, { fit: "contain", background: { r: 255, g: 255, b: 255 } }).toBuffer();
-    const priceFinal = await sharp(priceRotated).resize(sideW, canvasH, { fit: "contain", background: { r: 255, g: 255, b: 255 } }).toBuffer();
 
     // Compose everything
     const tag = await sharp({
       create: { width: canvasW, height: canvasH, channels: 3, background: { r: 255, g: 255, b: 255 } }
     })
       .composite([
-        { input: codeFinal, top: 0, left: 0 },
+        { input: codePng, top: 0, left: 0 },
         { input: qrResized, top: 0, left: sideW },
-        { input: priceFinal, top: 0, left: sideW + qrSize },
+        { input: pricePng, top: 0, left: sideW + qrSize },
       ])
       .png()
       .toBuffer();
@@ -599,7 +583,7 @@ app.get("/api/racquets/:code/tag.png", async (req, res) => {
     res.send(tag);
   } catch (err) {
     console.error("Tag error:", err);
-    res.status(500).json({ error: "Tag generation failed" });
+    res.status(500).json({ error: "Tag generation failed: " + err.message });
   }
 });
 
