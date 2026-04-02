@@ -338,34 +338,18 @@ function printTagSuccess() { if (lastAddedRacquet) printTag(lastAddedRacquet.inv
 function downloadPDFForCode(code) { window.open("/api/racquets/"+code+"/pdf","_blank"); }
 
 function printTag(code) {
-  const tagWindow = window.open("", "_blank", "width=400,height=300");
-  if (!tagWindow) { alert("Please allow popups for this site."); return; }
-  tagWindow.document.write('<html><head><title>Tag '+code+'</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5"><div style="text-align:center;font-family:Arial,sans-serif;color:#888">Loading tag...</div></body></html>');
-
-  authFetch("/api/racquets/"+code+"/qr").then(r => r.json()).then(data => {
-    tagWindow.document.open();
-    tagWindow.document.write('<!DOCTYPE html><html><head><title>Tag '+code+'</title><style>'+
-      '@page { size: 400mm 400mm; margin: 0; }'+
-      '@media print { body { margin: 0; padding: 0; } .no-print { display: none !important; } }'+
-      'body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }'+
-      '.tag { width: 400mm; height: 400mm; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5mm; box-sizing: border-box; }'+
-      '.qr img { width: 340mm; height: 340mm; }'+
-      '.code { font-size: 48pt; font-weight: 700; color: #000; margin-top: 5mm; letter-spacing: 2px; }'+
-    '</style></head><body>'+
-      '<div class="tag">'+
-        '<div class="qr"><img src="'+data.qr+'" alt="QR"></div>'+
-        '<div class="code">'+code+'</div>'+
-      '</div>'+
-      '<div class="no-print" style="text-align:center;padding:16px;font-family:Arial,sans-serif">'+
-        '<div style="margin-bottom:12px;padding:12px;background:#f8f4ee;border-radius:8px;display:inline-block"><div style="font-size:11px;color:#999">Test size: 400mm × 400mm — Niimbot will scale to fit label</div></div>'+
-        '<div><button onclick="window.print()" style="padding:10px 24px;background:#c8a96e;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Print Tag</button></div>'+
-        '<div style="margin-top:8px;font-size:12px;color:#999">Share to Niimbot app to print</div>'+
-      '</div>'+
-    '</body></html>');
-    tagWindow.document.close();
-  }).catch(err => {
-    tagWindow.document.body.innerHTML = '<div style="text-align:center;padding:20px;color:red">Failed to load QR code</div>';
-  });
+  // Download tag as PNG image — open in Niimbot app to print
+  authFetch("/api/racquets/"+code+"/tag.png").then(res => {
+    if (!res.ok) { alert("Failed to generate tag"); return; }
+    return res.blob().then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tag-"+code+".png";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }).catch(err => alert("Tag failed: "+err.message));
 }
 
 function sendWhatsApp() { if (lastAddedRacquet) sendWhatsAppFor(lastAddedRacquet); }

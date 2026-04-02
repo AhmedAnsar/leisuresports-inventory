@@ -508,6 +508,51 @@ app.get("/api/racquets/:code/qr", async (req, res) => {
   }
 });
 
+// ─── Tag PNG Image ───
+app.get("/api/racquets/:code/tag.png", async (req, res) => {
+  try {
+    const sharp = require("sharp");
+    const code = req.params.code.toUpperCase();
+    const shopBaseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : (process.env.RAILWAY_STATIC_URL || `http://localhost:${PORT}`);
+    const qrUrl = `${shopBaseUrl}/shop?code=${code}`;
+
+    // Generate high-res QR as PNG buffer
+    const qrPng = await QRCode.toBuffer(qrUrl, {
+      width: 800,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#000000", light: "#ffffff" },
+    });
+
+    // Create text label as SVG overlay
+    const fontSize = 64;
+    const textSvg = `<svg width="800" height="100">
+      <rect width="800" height="100" fill="white"/>
+      <text x="400" y="70" font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="bold" fill="black" text-anchor="middle" letter-spacing="2">${code}</text>
+    </svg>`;
+
+    // Compose: QR on top, code text below
+    const tag = await sharp({
+      create: { width: 800, height: 900, channels: 3, background: { r: 255, g: 255, b: 255 } }
+    })
+      .composite([
+        { input: qrPng, top: 0, left: 0 },
+        { input: Buffer.from(textSvg), top: 800, left: 0 },
+      ])
+      .png()
+      .toBuffer();
+
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", `attachment; filename="tag-${code}.png"`);
+    res.send(tag);
+  } catch (err) {
+    console.error("Tag error:", err);
+    res.status(500).json({ error: "Tag generation failed" });
+  }
+});
+
 // ─── PDF Generation ───
 app.get("/api/racquets/:code/pdf", async (req, res) => {
   try {
