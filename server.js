@@ -527,54 +527,69 @@ app.get("/api/racquets/:code/tag.png", async (req, res) => {
     const qrUrl = `${shopBaseUrl}/shop?code=${code}`;
 
     // Generate high-res QR as PNG buffer
-    const qrSize = 800;
     const qrPng = await QRCode.toBuffer(qrUrl, {
-      width: qrSize,
+      width: 800,
       margin: 1,
       errorCorrectionLevel: "M",
       color: { dark: "#000000", light: "#ffffff" },
     });
 
-    // Layout: 2:1 ratio (matching 2cm x 1cm label)
-    // Total canvas: 1600 x 800
-    // Left strip (400px): inventory code rotated 90°
-    // Center (800px): QR code
-    // Right strip (400px): price rotated 270°
-    const canvasW = 1600;
-    const canvasH = 800;
-    const sideW = 400;
+    // Use PDFKit to render text (has built-in Helvetica font that works on all servers)
+    function renderTextToPng(text, width, height, fontSize) {
+      return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ size: [width, height], margin: 0 });
+        const chunks = [];
+        doc.on("data", (c) => chunks.push(c));
+        doc.on("end", async () => {
+          try {
+            // Convert PDF to PNG via sharp
+            const pdfBuf = Buffer.concat(chunks);
+            const png = await sharp(pdfBuf, { density: 300 }).png().toBuffer();
+            resolve(png);
+          } catch (e) { reject(e); }
+        });
+        doc.rect(0, 0, width, height).fill("#ffffff");
+        doc.fill("#000000").font("Helvetica-Bold").fontSize(fontSize);
+        const textW = doc.widthOfString(text);
+        const textH = doc.currentLineHeight();
+        doc.text(text, (width - textW) / 2, (height - textH) / 2, { lineBreak: false });
+        doc.end();
+      });
+    }
 
-    // Create rotated inventory code (rendered tall, then rotated)
-    const codeSvg = `<svg width="${canvasH}" height="${sideW}">
-      <rect width="${canvasH}" height="${sideW}" fill="white"/>
-      <text x="${canvasH / 2}" y="${sideW / 2 + 22}" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="bold" fill="black" text-anchor="middle">${code}</text>
-    </svg>`;
-    const codeRotated = await sharp(Buffer.from(codeSvg))
-      .rotate(90)
-      .toBuffer();
+    // Render code text and price text as PNGs
+    const codeImg = await renderTextToPng(code, 800, 400, 72);
+    const priceImg = await renderTextToPng(price, 800, 400, 96);
 
-    // Create rotated price (rendered tall, then rotated opposite)
-    const priceSvg = `<svg width="${canvasH}" height="${sideW}">
-      <rect width="${canvasH}" height="${sideW}" fill="white"/>
-      <text x="${canvasH / 2}" y="${sideW / 2 + 28}" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="bold" fill="black" text-anchor="middle">${price}</text>
-    </svg>`;
-    const priceRotated = await sharp(Buffer.from(priceSvg))
-      .rotate(270)
-      .toBuffer();
+    // Rotate code 90° (reads bottom to top on left side)
+    const codeRotated = await sharp(codeImg).rotate(90).toBuffer();
+    const codeInfo = await sharp(codeRotated).metadata();
 
-    // Resize QR to fit center
-    const qrResized = await sharp(qrPng)
-      .resize(canvasH, canvasH)
-      .toBuffer();
+    // Rotate price 270° (reads top to bottom on right side)
+    const priceRotated = await sharp(priceImg).rotate(270).toBuffer();
+    const priceInfo = await sharp(priceRotated).metadata();
+
+    // Layout: code | QR | price
+    const qrSize = 800;
+    const sideW = Math.max(codeInfo.width, priceInfo.width, 300);
+    const canvasW = sideW + qrSize + sideW;
+    const canvasH = qrSize;
+
+    // Resize QR
+    const qrResized = await sharp(qrPng).resize(qrSize, qrSize).toBuffer();
+
+    // Resize side panels to match canvas height
+    const codeFinal = await sharp(codeRotated).resize(sideW, canvasH, { fit: "contain", background: { r: 255, g: 255, b: 255 } }).toBuffer();
+    const priceFinal = await sharp(priceRotated).resize(sideW, canvasH, { fit: "contain", background: { r: 255, g: 255, b: 255 } }).toBuffer();
 
     // Compose everything
     const tag = await sharp({
       create: { width: canvasW, height: canvasH, channels: 3, background: { r: 255, g: 255, b: 255 } }
     })
       .composite([
-        { input: codeRotated, top: 0, left: 0 },
+        { input: codeFinal, top: 0, left: 0 },
         { input: qrResized, top: 0, left: sideW },
-        { input: priceRotated, top: 0, left: sideW + canvasH },
+        { input: priceFinal, top: 0, left: sideW + qrSize },
       ])
       .png()
       .toBuffer();
