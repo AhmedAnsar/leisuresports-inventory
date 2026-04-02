@@ -534,15 +534,13 @@ app.get("/api/racquets/:code/tag.png", async (req, res) => {
       color: { dark: "#000000", light: "#ffffff" },
     });
 
-    // Layout: code on left (rotated) | QR center | price on right (rotated)
-    // Render text as SVG with inline style to avoid font issues
+    // Layout: code on left | QR center | price on right
     const qrSize = 800;
     const sideW = 300;
     const canvasW = sideW + qrSize + sideW;
     const canvasH = qrSize;
 
     // Draw each character individually as positioned SVG text
-    // This avoids font rendering issues on servers
     function charSvgColumn(text, w, h, charSize) {
       const chars = text.split("");
       const totalTextH = chars.length * charSize * 1.1;
@@ -559,7 +557,7 @@ app.get("/api/racquets/:code/tag.png", async (req, res) => {
     const codeSvg = charSvgColumn(code, sideW, canvasH, 60);
     const priceSvg = charSvgColumn(price, sideW, canvasH, 72);
 
-    // Convert SVGs to PNG first (forces rasterization)
+    // Convert SVGs to PNG first
     const codePng = await sharp(codeSvg).png().toBuffer();
     const pricePng = await sharp(priceSvg).png().toBuffer();
 
