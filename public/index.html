@@ -453,7 +453,12 @@ async function printNiimDirect(code, price) {
     // Connect to printer if not already connected
     if (!niimClient || !niimClient.isConnected) {
       niimClient = new niimbluelib.NiimbotBluetoothClient();
-      niimClient.on("disconnect", () => { niimClient = null; });
+      const onDisconnect = () => { niimClient = null; };
+      if (typeof niimClient.on === "function") {
+        niimClient.on("disconnect", onDisconnect);
+      } else if (typeof niimClient.addEventListener === "function") {
+        niimClient.addEventListener("disconnect", onDisconnect);
+      }
       await niimClient.connect();
     }
 
@@ -476,12 +481,19 @@ async function printNiimDirect(code, price) {
 
     // Encode and print
     const encoded = niimbluelib.ImageEncoder.encodeCanvas(printCanvas, "left");
-    const printTaskType = niimClient.getPrintTaskType() || "v3";
-    const printTask = niimbluelib.PrintTaskFactory.create(printTaskType, niimClient);
-
-    await printTask.printInit();
-    await printTask.printPage(encoded, 1);
-    await printTask.waitForFinished();
+    
+    // Try different print approaches based on API version
+    if (niimbluelib.PrintTaskFactory) {
+      const printTaskType = niimClient.getPrintTaskType ? niimClient.getPrintTaskType() : "v3";
+      const printTask = niimbluelib.PrintTaskFactory.create(printTaskType, niimClient);
+      await printTask.printInit();
+      await printTask.printPage(encoded, 1);
+      await printTask.waitForFinished();
+    } else if (niimClient.abstraction) {
+      await niimClient.abstraction.print(encoded, { quantity: 1 });
+    } else {
+      throw new Error("Could not find a supported print method in this version of NiimBlueLib");
+    }
 
     alert("✓ Tag printed successfully!");
   } catch (err) {
@@ -707,6 +719,6 @@ async function doReset() {
   } catch (err) { alert("Error: " + err.message); }
 }
 </script>
-<script src="https://unpkg.com/@mmote/niimbluelib@0.0.1-alpha.24/dist/umd/niimbluelib.min.js" async></script>
+<script src="https://cdn.jsdelivr.net/npm/@mmote/niimbluelib@0.0.1-alpha.38/dist/umd/niimbluelib.min.js" async onerror="console.log('NiimBlueLib failed to load from CDN')"></script>
 </body>
 </html>
