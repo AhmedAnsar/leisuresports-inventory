@@ -657,7 +657,7 @@ async function viewItem(code) { document.getElementById("lookup-code").value = c
 async function loadStats() {
   try {
     const s = await (await authFetch("/api/stats")).json();
-    document.getElementById("stock-count").textContent = "("+s.total+")";
+    document.getElementById("stock-count").textContent = "("+s.available+")";
     document.getElementById("stats-bar").innerHTML = '<div class="stat-card"><div class="stat-num">'+s.total+'</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-num" style="color:var(--success)">'+s.available+'</div><div class="stat-label">Available</div></div><div class="stat-card"><div class="stat-num" style="color:var(--danger)">'+s.sold+'</div><div class="stat-label">Sold</div></div><div class="stat-card"><div class="stat-num" style="color:var(--accent)">S$'+Number(s.totalValue).toFixed(0)+'</div><div class="stat-label">Stock Value</div></div>';
   } catch(e){}
 }
