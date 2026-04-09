@@ -508,27 +508,6 @@ app.get("/api/racquets/:code/qr", async (req, res) => {
   }
 });
 
-// ─── Shop QR Code (for wall poster) ───
-app.get("/api/shop-qr", async (req, res) => {
-  try {
-    const shopBaseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-      : (process.env.RAILWAY_STATIC_URL || `http://localhost:${PORT}`);
-    const shopUrl = `${shopBaseUrl}/shop`;
-    const qrPng = await QRCode.toBuffer(shopUrl, {
-      width: 1000,
-      margin: 2,
-      errorCorrectionLevel: "H",
-      color: { dark: "#000000", light: "#ffffff" },
-    });
-    res.setHeader("Content-Type", "image/png");
-    res.setHeader("Content-Disposition", 'attachment; filename="leisuresports-shop-qr.png"');
-    res.send(qrPng);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // ─── Tag PNG Image ───
 app.get("/api/racquets/:code/tag.png", async (req, res) => {
   try {
