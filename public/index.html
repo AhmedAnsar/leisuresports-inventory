@@ -469,32 +469,36 @@ async function printNiimDirect(code, price) {
     const modelMeta = niimClient.getModelMetadata();
     const printheadPixels = modelMeta ? modelMeta.printheadPixels : 96;
 
-    // Create canvas at 2x printhead width for better text quality
+    // Width MUST match printhead exactly. Height controls label length.
     const printCanvas = document.createElement("canvas");
-    printCanvas.width = printheadPixels * 2;
-    printCanvas.height = printheadPixels * 8;
+    printCanvas.width = printheadPixels;  // exactly 96
+    printCanvas.height = printheadPixels * 4;  // 384 = ~4cm label length
     const pCtx = printCanvas.getContext("2d");
     pCtx.fillStyle = "#ffffff";
     pCtx.fillRect(0, 0, printCanvas.width, printCanvas.height);
 
+    // Draw text - at 96px width, max readable font is about 20-24px
     pCtx.fillStyle = "#000000";
     pCtx.textAlign = "center";
     pCtx.textBaseline = "middle";
 
-    // Inventory code
-    pCtx.font = "bold 48px Arial, sans-serif";
-    pCtx.fillText(code, printCanvas.width / 2, printCanvas.height * 0.3);
+    // Split inventory code into two lines for readability
+    // LS-A on first line, 0001 on second line
+    const codeParts = code.split("-");
+    const line1 = codeParts.slice(0, 2).join("-"); // "LS-A"
+    const line2 = codeParts[2] || "";               // "0001"
 
-    // Line
-    pCtx.beginPath();
-    pCtx.moveTo(10, printCanvas.height * 0.5);
-    pCtx.lineTo(printCanvas.width - 10, printCanvas.height * 0.5);
-    pCtx.lineWidth = 3;
-    pCtx.stroke();
+    pCtx.font = "bold 24px Arial, sans-serif";
+    pCtx.fillText(line1, printCanvas.width / 2, printCanvas.height * 0.18);
+    pCtx.font = "bold 28px Arial, sans-serif";
+    pCtx.fillText(line2, printCanvas.width / 2, printCanvas.height * 0.35);
+
+    // Divider
+    pCtx.fillRect(8, printCanvas.height * 0.48, printCanvas.width - 16, 3);
 
     // Price
     const priceText = price ? "S$" + Number(price).toFixed(0) : "";
-    pCtx.font = "bold 56px Arial, sans-serif";
+    pCtx.font = "bold 30px Arial, sans-serif";
     pCtx.fillText(priceText, printCanvas.width / 2, printCanvas.height * 0.7);
 
     console.log("Print canvas:", { w: printCanvas.width, h: printCanvas.height });
