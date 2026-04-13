@@ -469,11 +469,38 @@ async function printNiimDirect(code, price) {
     const modelMeta = niimClient.getModelMetadata();
     const printheadPixels = modelMeta ? modelMeta.printheadPixels : 96;
 
-    // Send the original canvas directly - let the encoder handle it
-    console.log("Sending canvas:", { w: canvas.width, h: canvas.height, printheadPixels });
+    // Create canvas at 2x printhead width for better text quality
+    const printCanvas = document.createElement("canvas");
+    printCanvas.width = printheadPixels * 2;
+    printCanvas.height = printheadPixels * 8;
+    const pCtx = printCanvas.getContext("2d");
+    pCtx.fillStyle = "#ffffff";
+    pCtx.fillRect(0, 0, printCanvas.width, printCanvas.height);
 
-    // Encode the original 800x200 canvas
-    const encoded = niimbluelib.ImageEncoder.encodeCanvas(canvas, "left");
+    pCtx.fillStyle = "#000000";
+    pCtx.textAlign = "center";
+    pCtx.textBaseline = "middle";
+
+    // Inventory code
+    pCtx.font = "bold 48px Arial, sans-serif";
+    pCtx.fillText(code, printCanvas.width / 2, printCanvas.height * 0.3);
+
+    // Line
+    pCtx.beginPath();
+    pCtx.moveTo(10, printCanvas.height * 0.5);
+    pCtx.lineTo(printCanvas.width - 10, printCanvas.height * 0.5);
+    pCtx.lineWidth = 3;
+    pCtx.stroke();
+
+    // Price
+    const priceText = price ? "S$" + Number(price).toFixed(0) : "";
+    pCtx.font = "bold 56px Arial, sans-serif";
+    pCtx.fillText(priceText, printCanvas.width / 2, printCanvas.height * 0.7);
+
+    console.log("Print canvas:", { w: printCanvas.width, h: printCanvas.height });
+
+    // Encode
+    const encoded = niimbluelib.ImageEncoder.encodeCanvas(printCanvas, "left");
 
     // Use Abstraction class for printing
     const abstraction = new niimbluelib.Abstraction(niimClient);
