@@ -467,17 +467,40 @@ async function printNiimDirect(code, price) {
     // Fetch printer info to detect model
     await niimClient.fetchPrinterInfo();
     const modelMeta = niimClient.getModelMetadata();
-    const printheadPixels = modelMeta ? modelMeta.printheadPixels : 384;
+    const printheadPixels = modelMeta ? modelMeta.printheadPixels : 96;
 
-    // Scale canvas: width must match printhead pixels, height scales proportionally
+    // D11 has 96px printhead width, prints sideways (printDirection: left)
+    // Width = printhead pixels (short side of label = 1cm)
+    // Height = label length (long side = 4cm), so 4x the width
     const printCanvas = document.createElement("canvas");
     printCanvas.width = printheadPixels;
-    printCanvas.height = Math.round(printheadPixels * (canvas.height / canvas.width));
-    console.log("Printer info:", { modelMeta, printheadPixels, canvasW: printCanvas.width, canvasH: printCanvas.height });
+    printCanvas.height = printheadPixels * 4;
     const pCtx = printCanvas.getContext("2d");
     pCtx.fillStyle = "#ffffff";
     pCtx.fillRect(0, 0, printCanvas.width, printCanvas.height);
-    pCtx.drawImage(canvas, 0, 0, printCanvas.width, printCanvas.height);
+
+    // Draw text vertically to fill the label
+    pCtx.fillStyle = "#000000";
+    pCtx.textAlign = "center";
+    pCtx.textBaseline = "middle";
+
+    // Inventory code - top half
+    pCtx.font = "bold " + Math.floor(printheadPixels * 0.28) + "px Arial, sans-serif";
+    pCtx.fillText(code, printCanvas.width / 2, printCanvas.height * 0.3);
+
+    // Divider line
+    pCtx.beginPath();
+    pCtx.moveTo(8, printCanvas.height * 0.5);
+    pCtx.lineTo(printCanvas.width - 8, printCanvas.height * 0.5);
+    pCtx.lineWidth = 2;
+    pCtx.stroke();
+
+    // Price - bottom half
+    const priceText = price ? "S$" + Number(price).toFixed(0) : "";
+    pCtx.font = "bold " + Math.floor(printheadPixels * 0.35) + "px Arial, sans-serif";
+    pCtx.fillText(priceText, printCanvas.width / 2, printCanvas.height * 0.7);
+
+    console.log("Print canvas:", { w: printCanvas.width, h: printCanvas.height, printheadPixels });
 
     // Encode image
     const encoded = niimbluelib.ImageEncoder.encodeCanvas(printCanvas, "left");
