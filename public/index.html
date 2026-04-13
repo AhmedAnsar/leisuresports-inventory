@@ -459,7 +459,7 @@ async function printNiimDirect(code, price) {
       await niimClient.connect();
     }
 
-    // Fetch printer info
+    // Fetch printer info to detect model
     await niimClient.fetchPrinterInfo();
     const modelMeta = niimClient.getModelMetadata();
 
@@ -479,60 +479,30 @@ async function printNiimDirect(code, price) {
     // Encode image
     const encoded = niimbluelib.ImageEncoder.encodeCanvas(printCanvas, "left");
 
-    // Try multiple print approaches based on available API
-    let printed = false;
+    // Use Abstraction class for printing
+    const abstraction = new niimbluelib.Abstraction(niimClient);
 
-    // Approach 1: PrintTaskFactory (newer versions)
-    if (!printed && niimbluelib.PrintTaskFactory) {
-      try {
-        const taskType = niimClient.getPrintTaskType ? niimClient.getPrintTaskType() : "v3";
-        const task = niimbluelib.PrintTaskFactory.create(taskType, niimClient);
-        await task.printInit();
-        await task.printPage(encoded, 1);
-        await task.waitForFinished();
-        printed = true;
-      } catch (e) { console.log("PrintTaskFactory failed:", e); }
+    // Find the right print task for this printer model
+    const printerInfo = niimClient.getPrinterInfo ? niimClient.getPrinterInfo() : null;
+    const modelId = printerInfo ? printerInfo.modelId : null;
+
+    let PrintTaskClass = null;
+    if (modelId && niimbluelib.findPrintTask) {
+      PrintTaskClass = niimbluelib.findPrintTask(modelId);
+    }
+    if (!PrintTaskClass) {
+      // Default to D110PrintTask as fallback
+      PrintTaskClass = niimbluelib.D110PrintTask || niimbluelib.B1PrintTask;
     }
 
-    // Approach 2: Direct abstraction methods
-    if (!printed && niimClient.abstraction) {
-      try {
-        const a = niimClient.abstraction;
-        if (typeof a.printImage === "function") {
-          await a.printImage(encoded, { quantity: 1 });
-          printed = true;
-        } else if (typeof a.print === "function") {
-          await a.print(encoded, { quantity: 1 });
-          printed = true;
-        }
-      } catch (e) { console.log("Abstraction failed:", e); }
-    }
-
-    // Approach 3: Use raw packet sending
-    if (!printed) {
-      try {
-        // Start print
-        await niimClient.sendPacketWaitResponse(
-          new niimbluelib.NiimbotPacket(0x01, [1])
-        );
-        // Send image data
-        for (const row of encoded) {
-          await niimClient.sendRaw(row);
-        }
-        // End print
-        await niimClient.sendPacketWaitResponse(
-          new niimbluelib.NiimbotPacket(0xf3, [1])
-        );
-        printed = true;
-      } catch (e) { console.log("Raw packet failed:", e); }
-    }
-
-    if (printed) {
+    if (PrintTaskClass) {
+      const task = new PrintTaskClass(abstraction, niimClient);
+      await task.printInit();
+      await task.printPage(encoded, 1);
+      await task.waitForFinished();
       alert("✓ Tag printed successfully!");
     } else {
-      // Show what's available for debugging
-      const available = Object.keys(niimbluelib).join(", ");
-      alert("Print method not found.\n\nAvailable in niimbluelib:\n" + available + "\n\nPlease use 🏷️ Print Tag instead.");
+      alert("Could not find a print task for your printer model.\n\nPlease use 🏷️ Print Tag instead.");
     }
   } catch (err) {
     if (err.message && err.message.includes("cancelled")) {
