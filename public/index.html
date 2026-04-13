@@ -468,12 +468,12 @@ async function printNiimDirect(code, price) {
     await niimClient.fetchPrinterInfo();
     const modelMeta = niimClient.getModelMetadata();
     const printheadPixels = modelMeta ? modelMeta.printheadPixels : 384;
-    console.log("Printer info:", { modelMeta, printheadPixels, canvasW: printCanvas.width, canvasH: printCanvas.height });
 
     // Scale canvas: width must match printhead pixels, height scales proportionally
     const printCanvas = document.createElement("canvas");
     printCanvas.width = printheadPixels;
     printCanvas.height = Math.round(printheadPixels * (canvas.height / canvas.width));
+    console.log("Printer info:", { modelMeta, printheadPixels, canvasW: printCanvas.width, canvasH: printCanvas.height });
     const pCtx = printCanvas.getContext("2d");
     pCtx.fillStyle = "#ffffff";
     pCtx.fillRect(0, 0, printCanvas.width, printCanvas.height);
