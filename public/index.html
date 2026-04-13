@@ -469,51 +469,11 @@ async function printNiimDirect(code, price) {
     const modelMeta = niimClient.getModelMetadata();
     const printheadPixels = modelMeta ? modelMeta.printheadPixels : 96;
 
-    // Render at high resolution first, then scale down to printhead width
-    // This keeps text sharp and readable
-    const scale = 8;
-    const pw = printheadPixels * scale;  // 768px wide
-    const ph = pw * 4;                   // 3072px tall (4:1 ratio for 4cm x 1cm label)
+    // Send the original canvas directly - let the encoder handle it
+    console.log("Sending canvas:", { w: canvas.width, h: canvas.height, printheadPixels });
 
-    const printCanvas = document.createElement("canvas");
-    printCanvas.width = pw;
-    printCanvas.height = ph;
-    const pCtx = printCanvas.getContext("2d");
-    pCtx.fillStyle = "#ffffff";
-    pCtx.fillRect(0, 0, pw, ph);
-
-    // Draw text at high resolution
-    pCtx.fillStyle = "#000000";
-    pCtx.textAlign = "center";
-    pCtx.textBaseline = "middle";
-
-    // Inventory code - top half
-    pCtx.font = "bold " + Math.floor(pw * 0.3) + "px Arial, sans-serif";
-    pCtx.fillText(code, pw / 2, ph * 0.28);
-
-    // Divider line
-    pCtx.beginPath();
-    pCtx.moveTo(pw * 0.1, ph * 0.5);
-    pCtx.lineTo(pw * 0.9, ph * 0.5);
-    pCtx.lineWidth = Math.ceil(pw * 0.02);
-    pCtx.stroke();
-
-    // Price - bottom half
-    const priceText = price ? "S$" + Number(price).toFixed(0) : "";
-    pCtx.font = "bold " + Math.floor(pw * 0.35) + "px Arial, sans-serif";
-    pCtx.fillText(priceText, pw / 2, ph * 0.72);
-
-    // Now scale down to printer resolution
-    const finalCanvas = document.createElement("canvas");
-    finalCanvas.width = printheadPixels;
-    finalCanvas.height = printheadPixels * 4;
-    const fCtx = finalCanvas.getContext("2d");
-    fCtx.drawImage(printCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
-
-    console.log("Print canvas:", { renderW: pw, renderH: ph, finalW: finalCanvas.width, finalH: finalCanvas.height });
-
-    // Encode image
-    const encoded = niimbluelib.ImageEncoder.encodeCanvas(finalCanvas, "left");
+    // Encode the original 800x200 canvas
+    const encoded = niimbluelib.ImageEncoder.encodeCanvas(canvas, "left");
 
     // Use Abstraction class for printing
     const abstraction = new niimbluelib.Abstraction(niimClient);
