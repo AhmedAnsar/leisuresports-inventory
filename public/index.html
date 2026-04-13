@@ -453,11 +453,8 @@ async function printNiimDirect(code, price) {
     // Connect to printer if not already connected
     if (!niimClient || !niimClient.isConnected) {
       niimClient = new niimbluelib.NiimbotBluetoothClient();
-      const onDisconnect = () => { niimClient = null; };
       if (typeof niimClient.on === "function") {
-        niimClient.on("disconnect", onDisconnect);
-      } else if (typeof niimClient.addEventListener === "function") {
-        niimClient.addEventListener("disconnect", onDisconnect);
+        niimClient.on("disconnect", () => { niimClient = null; });
       }
       await niimClient.connect();
     }
@@ -479,23 +476,64 @@ async function printNiimDirect(code, price) {
     pCtx.fillRect(0, 0, labelWidth, labelHeight);
     pCtx.drawImage(canvas, 0, 0, labelWidth, labelHeight);
 
-    // Encode and print
+    // Encode image
     const encoded = niimbluelib.ImageEncoder.encodeCanvas(printCanvas, "left");
-    
-    // Try different print approaches based on API version
-    if (niimbluelib.PrintTaskFactory) {
-      const printTaskType = niimClient.getPrintTaskType ? niimClient.getPrintTaskType() : "v3";
-      const printTask = niimbluelib.PrintTaskFactory.create(printTaskType, niimClient);
-      await printTask.printInit();
-      await printTask.printPage(encoded, 1);
-      await printTask.waitForFinished();
-    } else if (niimClient.abstraction) {
-      await niimClient.abstraction.print(encoded, { quantity: 1 });
-    } else {
-      throw new Error("Could not find a supported print method in this version of NiimBlueLib");
+
+    // Try multiple print approaches based on available API
+    let printed = false;
+
+    // Approach 1: PrintTaskFactory (newer versions)
+    if (!printed && niimbluelib.PrintTaskFactory) {
+      try {
+        const taskType = niimClient.getPrintTaskType ? niimClient.getPrintTaskType() : "v3";
+        const task = niimbluelib.PrintTaskFactory.create(taskType, niimClient);
+        await task.printInit();
+        await task.printPage(encoded, 1);
+        await task.waitForFinished();
+        printed = true;
+      } catch (e) { console.log("PrintTaskFactory failed:", e); }
     }
 
-    alert("✓ Tag printed successfully!");
+    // Approach 2: Direct abstraction methods
+    if (!printed && niimClient.abstraction) {
+      try {
+        const a = niimClient.abstraction;
+        if (typeof a.printImage === "function") {
+          await a.printImage(encoded, { quantity: 1 });
+          printed = true;
+        } else if (typeof a.print === "function") {
+          await a.print(encoded, { quantity: 1 });
+          printed = true;
+        }
+      } catch (e) { console.log("Abstraction failed:", e); }
+    }
+
+    // Approach 3: Use raw packet sending
+    if (!printed) {
+      try {
+        // Start print
+        await niimClient.sendPacketWaitResponse(
+          new niimbluelib.NiimbotPacket(0x01, [1])
+        );
+        // Send image data
+        for (const row of encoded) {
+          await niimClient.sendRaw(row);
+        }
+        // End print
+        await niimClient.sendPacketWaitResponse(
+          new niimbluelib.NiimbotPacket(0xf3, [1])
+        );
+        printed = true;
+      } catch (e) { console.log("Raw packet failed:", e); }
+    }
+
+    if (printed) {
+      alert("✓ Tag printed successfully!");
+    } else {
+      // Show what's available for debugging
+      const available = Object.keys(niimbluelib).join(", ");
+      alert("Print method not found.\n\nAvailable in niimbluelib:\n" + available + "\n\nPlease use 🏷️ Print Tag instead.");
+    }
   } catch (err) {
     if (err.message && err.message.includes("cancelled")) {
       // User cancelled bluetooth picker
