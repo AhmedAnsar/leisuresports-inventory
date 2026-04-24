@@ -142,12 +142,9 @@
         <div class="section-title">🏸 Racquet Details</div>
         <div class="row row-2">
           <div class="field"><label>Brand <span class="req">*</span></label><select id="brand-select" required><option value="">Select brand...</option></select><input type="text" id="brand-custom" class="hidden" placeholder="Type custom brand name" style="margin-top:6px"><input type="hidden" name="brand" id="brand-value"></div>
-          <div class="field"><label>Model <span class="req">*</span></label><select id="model-select" required><option value="">Pick brand first</option></select><input type="text" id="model-custom" class="hidden" placeholder="Type custom model name" style="margin-top:6px"><input type="hidden" name="model" id="model-value"></div>
+          <div class="field"><label>Model / Description <span class="req">*</span></label><input type="text" name="model" id="model-input" required placeholder="e.g. Clash 100 v2 100L RG4 2024"></div>
         </div>
-        <div class="row row-2">
-          <div class="field"><label>Variant</label><input type="text" name="head_size" placeholder="e.g. 98L, 100, 97 V14"></div>
-          <div class="field"><label>Grip Size</label><select name="grip_size"><option value="">Select...</option><option>0 (4")</option><option>1 (4⅛")</option><option>2 (4¼")</option><option>3 (4⅜")</option><option>4 (4½")</option><option>5 (4⅝")</option></select></div>
-        </div>
+        <div class="field"><label>Grip Size</label><select name="grip_size"><option value="">Select...</option><option>0 (4")</option><option>1 (4⅛")</option><option>2 (4¼")</option><option>3 (4⅜")</option><option>4 (4½")</option><option>5 (4⅝")</option></select></div>
       </div>
       <div class="card">
         <div class="section-title">💰 Pricing & Photo</div>
@@ -254,50 +251,38 @@ function logout() {
   window.location.href = "/login";
 }
 
-const BRANDS = {
-  Babolat: ["Pure Drive 2025","Pure Drive 98 2025","Pure Drive 107","Pure Aero","Pure Aero 98","Pure Aero Rafa","Pure Strike 98 16x19","Pure Strike 98 18x20","Pure Strike 100 16x20","Evo Drive","Evo Aero","Boost Drive","Boost Aero"],
-  Wilson: ["Blade 98 V9","Blade 98 18x20 V9","Blade 100 V9","Blade 104 V9","Pro Staff 97 V14","Shift 99","Shift 99 Pro","RF01","Clash 100","Ultra 100 V4","Burn 100"],
-  Head: ["Speed Pro 2025","Speed MP 2025","Speed Legend MP 2025","Speed MP 2026","Gravity Pro","Gravity MP","Radical Pro","Radical MP","Extreme Pro","Extreme MP","Prestige Pro","Prestige MP","Boom Pro","Boom MP"],
-  Yonex: ["EZONE 98","EZONE 100","VCORE 98","VCORE 100","VCORE Pro 97","Percept 97","Percept 100"],
-  Dunlop: ["CX 200","CX 400","SX 300","SX 600","FX 500"],
-  Prince: ["Phantom 100","Phantom 100X","ATS Textreme 100","Beast 100","Ripstick 100"],
-  Solinco: ["Blackout 100","Blackout 285","Blackout 300"],
-  Tecnifibre: ["TF40","T-Fight 305","T-Fight 300","Tempo 298","TF-X1"],
-  Volkl: ["V-Cell 10","V-Feel 8","C10 Pro"],
-  Other: ["Custom / Unlisted"]
-};
+const DEFAULT_BRANDS = ["Babolat","Wilson","Head","Yonex","Dunlop","Prince","Solinco","Tecnifibre","Volkl"];
 let lastAddedRacquet = null;
 
 const brandSel = document.getElementById("brand-select");
-const modelSel = document.getElementById("model-select");
 const brandCustom = document.getElementById("brand-custom");
-const modelCustom = document.getElementById("model-custom");
 const brandValue = document.getElementById("brand-value");
-const modelValue = document.getElementById("model-value");
 
-Object.keys(BRANDS).forEach(b => { const o = document.createElement("option"); o.value = b; o.textContent = b; brandSel.appendChild(o); });
+// Load brands: default list + any custom brands from database
+async function loadBrands() {
+  const allBrands = new Set(DEFAULT_BRANDS);
+  try {
+    const res = await authFetch("/api/racquets?search=");
+    const items = await res.json();
+    items.forEach(i => { if (i.brand) allBrands.add(i.brand); });
+  } catch (e) {}
+  brandSel.innerHTML = '<option value="">Select brand...</option>';
+  [...allBrands].sort().forEach(b => {
+    const o = document.createElement("option"); o.value = b; o.textContent = b; brandSel.appendChild(o);
+  });
+  const otherOpt = document.createElement("option"); otherOpt.value = "Other"; otherOpt.textContent = "Other";
+  brandSel.appendChild(otherOpt);
+}
+loadBrands();
 
 brandSel.addEventListener("change", () => {
   const isOther = brandSel.value === "Other";
   brandCustom.classList.toggle("hidden", !isOther);
   if (isOther) { brandCustom.value = ""; brandCustom.focus(); }
-
-  modelSel.innerHTML = '<option value="">Select model...</option>';
-  modelCustom.classList.add("hidden");
-  const models = BRANDS[brandSel.value] || [];
-  models.forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; modelSel.appendChild(o); });
 });
 
-modelSel.addEventListener("change", () => {
-  const isOther = modelSel.value === "Custom / Unlisted";
-  modelCustom.classList.toggle("hidden", !isOther);
-  if (isOther) { modelCustom.value = ""; modelCustom.focus(); }
-});
-
-// Sync hidden fields before submit
-function syncBrandModel() {
+function syncBrand() {
   brandValue.value = brandSel.value === "Other" ? brandCustom.value : brandSel.value;
-  modelValue.value = modelSel.value === "Custom / Unlisted" ? modelCustom.value : modelSel.value;
 }
 
 document.getElementById("photo-input").addEventListener("change", function() {
@@ -315,9 +300,8 @@ function showView(v) {
 
 document.getElementById("intake-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  syncBrandModel();
+  syncBrand();
   if (!brandValue.value) { alert("Please enter a brand name."); return; }
-  if (!modelValue.value) { alert("Please enter a model name."); return; }
   try {
     const res = await authFetch("/api/racquets", { method: "POST", body: new FormData(e.target) });
     const data = await res.json();
@@ -326,9 +310,8 @@ document.getElementById("intake-form").addEventListener("submit", async (e) => {
       document.getElementById("success-code").textContent = data.racquet.inventory_code;
       document.getElementById("intake-form").classList.add("hidden");
       document.getElementById("success-view").classList.remove("hidden");
-      e.target.reset(); removePhoto(); loadStats();
-      brandCustom.classList.add("hidden"); modelCustom.classList.add("hidden");
-      modelSel.innerHTML = '<option value="">Pick brand first</option>';
+      e.target.reset(); removePhoto(); loadStats(); loadBrands();
+      brandCustom.classList.add("hidden");
     } else { alert("Error: "+(data.error||"Failed to save")); }
   } catch (err) { alert("Error: "+err.message); }
 });
@@ -514,13 +497,24 @@ async function printNiimDirect(code, price) {
     const modelId = printerInfo ? printerInfo.modelId : null;
 
     let PrintTaskClass = null;
+    
+    // Try findPrintTask first
     if (modelId && niimbluelib.findPrintTask) {
       PrintTaskClass = niimbluelib.findPrintTask(modelId);
     }
+    
+    // For D11, try OldD11PrintTask specifically
     if (!PrintTaskClass) {
-      // Default to D110PrintTask as fallback
-      PrintTaskClass = niimbluelib.D110PrintTask || niimbluelib.B1PrintTask;
+      PrintTaskClass = niimbluelib.OldD11PrintTask || niimbluelib.D110PrintTask || niimbluelib.B1PrintTask;
     }
+
+    console.log("Print task:", { 
+      modelId, 
+      taskClass: PrintTaskClass ? PrintTaskClass.name : "none",
+      imageW: printCanvas.width, 
+      imageH: printCanvas.height,
+      encodedRows: encoded.length 
+    });
 
     if (PrintTaskClass) {
       const task = new PrintTaskClass(abstraction, niimClient);
@@ -626,7 +620,7 @@ function renderDetail(r) {
       '<button class="btn btn-sm" style="background:var(--surface2);color:var(--danger);border:1px solid var(--border);font-size:12px" onclick="adminDelete(\''+r.inventory_code+'\')">🗑️ Delete Record</button>'+
       '</div>';
   }
-  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Variant",r.head_size||"—")+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+buttons+'</div>';
+  return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><div style="font-size:20px;font-weight:700;font-family:Playfair Display,serif">'+r.brand+' '+r.model+'</div><div style="font-family:monospace;color:var(--accent);letter-spacing:1px;font-size:14px;margin-top:2px">'+r.inventory_code+'</div></div>'+badge+'</div>'+photo+'<div class="detail-grid">'+dc("Grip Size",r.grip_size||"—")+dc("Customer",r.customer_name)+dc("Phone",r.customer_phone)+dc("Date In",fd(r.date_added))+dc("Status",r.status)+'</div><div class="price-box"><div class="price-label">Price</div><div class="price-value">S$'+Number(r.expected_price).toFixed(2)+'</div></div>'+(r.notes?'<div class="note-box"><strong>Notes:</strong> '+r.notes+'</div>':'')+buttons+'</div>';
 }
 
 async function markSold(code) {

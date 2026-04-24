@@ -227,7 +227,6 @@ async function loadRacquets() {
           '<div class="card-brand">'+r.brand+'</div>'+
           '<div class="card-model">'+r.model+'</div>'+
           '<div class="card-details">'+
-            (r.head_size ? '<span>'+r.head_size+'</span>' : '')+
             (r.grip_size ? '<span>Grip '+r.grip_size+'</span>' : '')+
           '</div>'+
           '<div class="card-price">S$'+Number(r.expected_price).toFixed(2)+'</div>'+
@@ -260,7 +259,6 @@ function showDetail(r) {
   const mc = (l,v) => '<div class="modal-cell"><div class="modal-label">'+l+'</div><div class="modal-val">'+v+'</div></div>';
 
   const whatsappMsg = "Hi Leisure Sports,\n\nI'm interested in this pre-owned racquet:\n\n🏸 "+r.brand+" "+r.model+
-    (r.head_size ? "\n📐 Variant: "+r.head_size : "")+
     "\n🏷️ Code: "+r.inventory_code+
     "\n💰 Price: S$"+Number(r.expected_price).toFixed(2)+
     "\n\nIs it still available? I'd like to know more.\n\nThank you!";
@@ -275,7 +273,6 @@ function showDetail(r) {
         '<div class="modal-brand">'+r.brand+'</div>'+
         '<div class="modal-model">'+r.model+'</div>'+
         '<div class="modal-grid">'+
-          mc("Variant", r.head_size || "—")+
           mc("Grip Size", r.grip_size || "—")+
           mc("Code", r.inventory_code)+
           mc("Listed", fd(r.date_added))+

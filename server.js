@@ -622,7 +622,6 @@ app.get("/api/racquets/:code/pdf", async (req, res) => {
     y = sectionHeader(doc, "RACQUET DETAILS", y, accent);
     y = tableRow(doc, "Brand", item.brand, y);
     y = tableRow(doc, "Model", item.model, y);
-    y = tableRow(doc, "Variant", item.head_size || "—", y);
     y = tableRow(doc, "Grip Size", item.grip_size || "—", y);
     y += 10;
 
