@@ -244,9 +244,15 @@ async function loadRacquets() {
 let brandsPopulated = false;
 function populateBrandFilter(items) {
   if (brandsPopulated) return;
-  const brands = [...new Set(items.map(i => i.brand))].sort();
+  const brandMap = new Map();
+  items.forEach(i => {
+    if (i.brand) {
+      const key = i.brand.trim().toLowerCase();
+      if (!brandMap.has(key)) brandMap.set(key, i.brand.trim());
+    }
+  });
   const sel = document.getElementById("brand-filter");
-  brands.forEach(b => {
+  [...brandMap.values()].sort().forEach(b => {
     const o = document.createElement("option");
     o.value = b; o.textContent = b;
     sel.appendChild(o);
