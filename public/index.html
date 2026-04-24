@@ -260,14 +260,24 @@ const brandValue = document.getElementById("brand-value");
 
 // Load brands: default list + any custom brands from database
 async function loadBrands() {
-  const allBrands = new Set(DEFAULT_BRANDS);
+  // Use a map to normalize: key = lowercase, value = display name (prefer database casing, then default)
+  const brandMap = new Map();
+  DEFAULT_BRANDS.forEach(b => brandMap.set(b.toLowerCase().trim(), b));
   try {
     const res = await authFetch("/api/racquets?search=");
     const items = await res.json();
-    items.forEach(i => { if (i.brand) allBrands.add(i.brand); });
+    items.forEach(i => {
+      if (i.brand && i.brand.trim()) {
+        const key = i.brand.trim().toLowerCase();
+        // Only add if not already in defaults (prevents duplicates with different casing)
+        if (!brandMap.has(key)) {
+          brandMap.set(key, i.brand.trim());
+        }
+      }
+    });
   } catch (e) {}
   brandSel.innerHTML = '<option value="">Select brand...</option>';
-  [...allBrands].sort().forEach(b => {
+  [...brandMap.values()].sort().forEach(b => {
     const o = document.createElement("option"); o.value = b; o.textContent = b; brandSel.appendChild(o);
   });
   const otherOpt = document.createElement("option"); otherOpt.value = "Other"; otherOpt.textContent = "Other";
@@ -282,7 +292,14 @@ brandSel.addEventListener("change", () => {
 });
 
 function syncBrand() {
-  brandValue.value = brandSel.value === "Other" ? brandCustom.value : brandSel.value;
+  if (brandSel.value === "Other") {
+    const custom = brandCustom.value.trim();
+    // Check if custom brand matches an existing dropdown option (case-insensitive)
+    const existing = [...brandSel.options].find(o => o.value.toLowerCase() === custom.toLowerCase() && o.value !== "Other" && o.value !== "");
+    brandValue.value = existing ? existing.value : custom;
+  } else {
+    brandValue.value = brandSel.value;
+  }
 }
 
 document.getElementById("photo-input").addEventListener("change", function() {
