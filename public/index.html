@@ -343,31 +343,22 @@ function downloadPDFForCode(code) { window.open("/api/racquets/"+code+"/pdf","_b
 function generateTagCanvas(code, price) {
   const canvas = document.createElement("canvas");
   canvas.width = 800;
-  canvas.height = 200;
+  canvas.height = 400;
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, 800, 200);
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 4;
-  ctx.roundRect(6, 6, 788, 188, 6);
-  ctx.stroke();
+  ctx.fillRect(0, 0, 800, 400);
   ctx.fillStyle = "#000000";
   ctx.textBaseline = "middle";
-  // Inventory code on the left
-  ctx.font = "bold 72px Arial, Helvetica, sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText(code, 30, 100);
-  // Divider line
-  ctx.beginPath();
-  ctx.moveTo(500, 30);
-  ctx.lineTo(500, 170);
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  // Price on the right
-  const priceText = price ? "S$" + Number(price).toFixed(0) : "";
-  ctx.font = "bold 80px Arial, Helvetica, sans-serif";
+  // Inventory code - top half
+  ctx.font = "bold 120px Arial, Helvetica, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(priceText, 650, 100);
+  ctx.fillText(code, 400, 140);
+  // Divider line
+  ctx.fillRect(40, 210, 720, 4);
+  // Price - bottom half
+  const priceText = price ? "S$" + Number(price).toFixed(0) : "";
+  ctx.font = "bold 140px Arial, Helvetica, sans-serif";
+  ctx.fillText(priceText, 400, 320);
   return canvas;
 }
 
