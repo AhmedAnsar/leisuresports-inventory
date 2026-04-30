@@ -619,6 +619,7 @@ function renderDetail(r) {
       '<button class="btn btn-secondary btn-sm" onclick="printTag(\''+r.inventory_code+'\','+r.expected_price+')">🏷️ Print Tag</button>'+
       (window.niimSupported?'<button class="btn btn-sm" style="background:#4a90d9;color:#fff" onclick="printNiimDirect(\''+r.inventory_code+'\','+r.expected_price+')">🖨️ Direct Print</button>':'')+
       '<button class="btn btn-secondary btn-sm" onclick="triggerPhotoUpload(\''+r.inventory_code+'\')">📷 '+(r.photo_path?'Update':'Add')+' Photo</button>'+
+      '<button class="btn btn-secondary btn-sm" onclick="editPrice(\''+r.inventory_code+'\','+r.expected_price+')">✏️ Edit Price</button>'+
       '<button class="btn btn-whatsapp btn-sm" onclick="sendWhatsAppFor('+JSON.stringify(r).replace(/'/g,"\\'").replace(/"/g,'&quot;')+')">💬 WhatsApp</button>'+
       '<button class="btn btn-danger btn-sm" onclick="markSold(\''+r.inventory_code+'\')">Mark as Sold</button>'+
       '</div>'+
@@ -693,6 +694,26 @@ async function adminDelete(code) {
 }
 
 let photoUploadCode = null;
+async function editPrice(code, currentPrice) {
+  const newPrice = prompt("Update price for " + code + "\n\nCurrent price: S$" + Number(currentPrice).toFixed(2) + "\n\nEnter new price:", currentPrice);
+  if (newPrice === null) return;
+  const parsed = parseFloat(newPrice);
+  if (isNaN(parsed) || parsed < 0) { alert("Invalid price."); return; }
+  try {
+    const res = await authFetch("/api/racquets/" + code + "/price", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ price: parsed })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      doLookup();
+    } else {
+      alert("Error: " + (data.error || "Update failed"));
+    }
+  } catch (err) { alert("Error: " + err.message); }
+}
+
 function triggerPhotoUpload(code) {
   photoUploadCode = code;
   const input = document.getElementById("detail-photo-input");

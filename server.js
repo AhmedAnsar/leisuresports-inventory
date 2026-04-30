@@ -426,6 +426,23 @@ app.post("/api/racquets/:code/photo", requireAuth, upload.single("photo"), async
   }
 });
 
+// Update price
+app.patch("/api/racquets/:code/price", requireAuth, async (req, res) => {
+  try {
+    const { price } = req.body;
+    if (price === undefined || isNaN(parseFloat(price))) {
+      return res.status(400).json({ error: "Invalid price" });
+    }
+    await db.run(
+      "UPDATE racquets SET expected_price = ? WHERE inventory_code = ?",
+      [parseFloat(price), req.params.code.toUpperCase()]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete
 app.delete("/api/racquets/:code", requireAuth, async (req, res) => {
   try {
